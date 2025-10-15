@@ -1,0 +1,308 @@
+import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
+
+/**
+ * Basketball actor with physics including gravity, bouncing, and shooting mechanics.
+ * 
+ * @author (your name)
+ * @version (a version number or a date)
+ */
+public class Basketball extends Actor
+{
+    private double velocityX = 0;
+    private double velocityY = 0;
+    private final double gravity = 0.3;
+    private final double bounceDamping = 0.7;
+    private final double friction = 0.98;
+    private GreenfootSound bounceSound;
+    private boolean soundEnabled = true;
+    
+    public Basketball()
+    {
+        GreenfootImage ballImage = new GreenfootImage("images/basketball.png");
+        ballImage.scale(40, 40);
+        setImage(ballImage);
+        
+        // Initialize sound with error handling
+        try {
+            bounceSound = new GreenfootSound("sounds/bounce.wav");
+        } catch (Throwable t) {
+            System.out.println("Could not load bounce sound: " + t.getMessage());
+            soundEnabled = false;
+            bounceSound = null;
+        }
+    }
+    
+    public void act()
+    {
+        applyPhysics();
+        checkCollisions();
+        checkBounds();
+    }
+    
+    private void applyPhysics()
+    {
+        // Apply gravity
+        velocityY += gravity;
+        
+        // Apply friction
+        velocityX *= friction;
+        
+        // Update position
+        setLocation(getX() + (int) velocityX, getY() + (int) velocityY);
+    }
+    
+    private void checkCollisions()
+    {
+       // --- Boundary Collision ---
+Boundary boundary = (Boundary) getOneIntersectingObject(Boundary.class);
+if (boundary != null)
+{
+    double dx = getX() - boundary.getX();
+    double dy = getY() - boundary.getY();
+    double distance = Math.sqrt(dx * dx + dy * dy);
+    double minDistance = (boundary.getWidth() / 2.0 + 20); // 20 = ball radius
+
+    if (distance < minDistance)
+    {
+        // Normalize direction
+        double nx = dx / distance;
+        double ny = dy / distance;
+
+        // Push ball out of boundary
+        setLocation(
+            (int)(boundary.getX() + nx * minDistance),
+            (int)(boundary.getY() + ny * minDistance)
+        );
+
+        // Reflect velocity
+        double dot = velocityX * nx + velocityY * ny;
+        velocityX -= 2 * dot * nx;
+        velocityY -= 2 * dot * ny;
+
+        // Apply damping
+        velocityX *= bounceDamping;
+        velocityY *= bounceDamping;
+
+        // Small cutoff
+        if (Math.abs(velocityX) < 0.3) velocityX = 0;
+        if (Math.abs(velocityY) < 0.3) velocityY = 0;
+
+        // Sound
+        if (soundEnabled && bounceSound != null)
+        {
+            try { playBounceSound(); } catch (Throwable t) { soundEnabled = false; }
+        }
+    }
+}
+        
+        // --- Backboard Collision ---
+        Backboard backboard = (Backboard) getOneIntersectingObject(Backboard.class);
+        if (backboard != null)
+    {
+        // Bounce
+        velocityX = -velocityX * bounceDamping;
+        velocityY *= bounceDamping;
+
+        // Push ball out stronger depending on velocity or at least a minimum offset
+        int push = (int) Math.max(4, Math.abs(velocityX) + 1);
+        if (getX() < backboard.getX())
+            setLocation(getX() - push, getY());
+        else
+            setLocation(getX() + push, getY());
+
+        // Prevent tiny jittering velocities
+        if (Math.abs(velocityX) < 0.5) velocityX = 0;
+        if (Math.abs(velocityY) < 0.5) velocityY = 0;
+
+        // Minimum rebound to prevent sliding
+        if (Math.abs(velocityX) < 2) velocityX = (velocityX > 0 ? 2 : -2);
+
+        // Sound
+        if (soundEnabled && bounceSound != null && Math.abs(velocityX) > 2)
+        {
+            try {
+               playBounceSound();
+            } catch (Throwable t) {
+                soundEnabled = false;
+            }
+        }
+    }
+
+  // --- Basket Collision ---
+Basket basket = (Basket) getOneIntersectingObject(Basket.class);
+if (basket != null)
+{
+    // Check if ball scored (passed inside the hoop area)
+    if (basket.checkScore(this))
+    {
+        MyWorld world = (MyWorld) getWorld();
+        world.addScore();
+
+        // Reset
+        setLocation(100, 500);
+        velocityX = 0;
+        velocityY = 0;
+        return;
+    }
+    else
+    {
+        // Calculate relative position of the ball to the basket
+        double dx = getX() - basket.getX();
+        double dy = getY() - basket.getY();
+
+        // --- CONDITIONS ---
+        // Ignore collision if ball is ABOVE rim and moving downward (about to score)
+        if (dy < -10 && velocityY > 0)
+        {
+            return; // allow natural fall
+        }
+
+        // --- SIDE OR UNDERNEATH COLLISION ---
+        if (dy > 0 || Math.abs(dx) > 25)
+        {
+            // bounce from below or side
+            if (dy > 0 && velocityY < 0) // coming upward
+                velocityY = -velocityY * bounceDamping;
+            else if (Math.abs(dx) > 25)
+                velocityX = -velocityX * bounceDamping;
+
+            // Push slightly away from rim to prevent sticking
+            int push = (int) Math.max(3, Math.abs(velocityX) + 1);
+            if (getX() < basket.getX())
+                setLocation(getX() - push, getY());
+            else
+                setLocation(getX() + push, getY());
+
+            // Damp tiny movements
+            if (Math.abs(velocityX) < 0.3) velocityX = 0;
+            if (Math.abs(velocityY) < 0.3) velocityY = 0;
+
+            // Play bounce sound
+            if (soundEnabled && bounceSound != null)
+            {
+                try {
+                    playBounceSound();
+                } catch (Throwable t) {
+                    soundEnabled = false;
+                }
+            }
+        }
+    }
+}
+}
+
+    
+    private void checkBounds()
+    {
+        // Check ceiling collision
+        if (getY() <= 20)
+        {
+            setLocation(getX(), 20);
+            velocityY = -velocityY * bounceDamping;
+            velocityX *= bounceDamping;
+            
+            // Play bounce sound if enabled
+            if (soundEnabled && bounceSound != null && Math.abs(velocityY) > 2)
+            {
+                try {
+                    playBounceSound();
+                } catch (Throwable t) {
+                    // Sound failed to play, continue silently
+                    soundEnabled = false;
+                }
+            }
+        }
+        
+        // Check floor collision
+        if (getY() >= getWorld().getHeight() - 20)
+        {
+            setLocation(getX(), getWorld().getHeight() - 20);
+            velocityY = -velocityY * bounceDamping;
+            velocityX *= bounceDamping;
+            
+            // Play bounce sound if enabled
+            if (soundEnabled && bounceSound != null && Math.abs(velocityY) > 2)
+            {
+                try {
+                    playBounceSound();
+                } catch (Throwable t) {
+                    // Sound failed to play, continue silently
+                    soundEnabled = false;
+                }
+            }
+            
+            // If ball is barely moving, stop it
+            if (Math.abs(velocityY) < 1 && Math.abs(velocityX) < 1)
+            {
+                velocityY = 0;
+                velocityX = 0;
+            }
+        }
+        
+        // Check wall collisions
+        if (getX() <= 20)
+        {
+            setLocation(20, getY());
+            velocityX = -velocityX * bounceDamping;
+            
+            // Play wall bounce sound
+            if (soundEnabled && bounceSound != null && Math.abs(velocityX) > 2)
+            {
+                try {
+                    bounceSound.play();
+                } catch (Throwable t) {
+                    // Sound failed to play, continue silently
+                    soundEnabled = false;
+                }
+            }
+        }
+        if (getX() >= getWorld().getWidth() - 20)
+        {
+            setLocation(getWorld().getWidth() - 20, getY());
+            velocityX = -velocityX * bounceDamping;
+            
+            // Play wall bounce sound
+            if (soundEnabled && bounceSound != null && Math.abs(velocityX) > 2)
+            {
+                try {
+                    playBounceSound();
+                } catch (Throwable t) {
+                    // Sound failed to play, continue silently
+                    soundEnabled = false;
+                }
+            }
+        }
+    }
+    
+    public void shoot(double deltaX, double deltaY, double power)
+    {
+        // Normalize the direction and apply power
+        double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        if (distance > 0)
+        {
+            velocityX = (deltaX / distance) * (power / 10.0);
+            velocityY = (deltaY / distance) * (power / 10.0);
+        }
+    }
+    
+    public double getVelocityX()
+    {
+        return velocityX;
+    }
+    
+    public double getVelocityY()
+    {
+        return velocityY;
+    }
+    
+    private void playBounceSound() {
+    if (!soundEnabled) return;
+
+    try {
+        GreenfootSound s = new GreenfootSound("sounds/bounce.wav");
+        s.play();
+    } catch (Throwable t) {
+        soundEnabled = false;
+    }
+}
+}

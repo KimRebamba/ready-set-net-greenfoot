@@ -1,0 +1,14 @@
+#BlueJ class context
+comment0.target=Backboard
+comment0.text=\r\n\ Backboard\ actor\ that\ provides\ a\ surface\ for\ the\ ball\ to\ bounce\ off.\r\n\ \r\n\ @author\ (your\ name)\r\n\ @version\ (a\ version\ number\ or\ a\ date)\r\n
+comment1.params=
+comment1.target=Backboard()
+comment2.params=
+comment2.target=void\ act()
+comment3.params=basket
+comment3.target=void\ setBasket(Basket)
+comment4.params=
+comment4.target=Basket\ getBasket()
+comment5.params=
+comment5.target=void\ moveToRandomLocation()
+numComments=6

@@ -1,0 +1,22 @@
+#BlueJ class context
+comment0.target=Basketball
+comment0.text=\r\n\ Basketball\ actor\ with\ physics\ including\ gravity,\ bouncing,\ and\ shooting\ mechanics.\r\n\ \r\n\ @author\ (your\ name)\r\n\ @version\ (a\ version\ number\ or\ a\ date)\r\n
+comment1.params=
+comment1.target=Basketball()
+comment2.params=
+comment2.target=void\ act()
+comment3.params=
+comment3.target=void\ applyPhysics()
+comment4.params=
+comment4.target=void\ checkCollisions()
+comment5.params=
+comment5.target=void\ checkBounds()
+comment6.params=deltaX\ deltaY\ power
+comment6.target=void\ shoot(double,\ double,\ double)
+comment7.params=
+comment7.target=double\ getVelocityX()
+comment8.params=
+comment8.target=double\ getVelocityY()
+comment9.params=
+comment9.target=void\ playBounceSound()
+numComments=10

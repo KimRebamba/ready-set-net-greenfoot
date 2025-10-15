@@ -1,0 +1,14 @@
+#BlueJ class context
+comment0.target=Arrow
+comment0.text=\r\n\ Arrow\ actor\ that\ shows\ the\ direction\ and\ power\ of\ the\ shot.\r\n\ \r\n\ @author\ (your\ name)\r\n\ @version\ (a\ version\ number\ or\ a\ date)\r\n
+comment1.params=
+comment1.target=Arrow()
+comment2.params=power
+comment2.target=void\ setPower(int)
+comment3.params=visible
+comment3.target=void\ setVisible(boolean)
+comment4.params=
+comment4.target=int\ getPower()
+comment5.params=
+comment5.target=boolean\ isVisible()
+numComments=6
