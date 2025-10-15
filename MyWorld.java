@@ -13,9 +13,9 @@ public class MyWorld extends World
     private Basketball ball;
     private Basket basket;
     private Backboard backboard;
-    private int score = 8;
+    private int score = 0;
     private ArrayList<Boundary> boundaries = new ArrayList<Boundary>();
-    private int timeLeft = 60; // 60 seconds
+    private int timeLeft = 120; // 60 seconds
     private long lastTime = System.currentTimeMillis();
     private boolean gameOver = false;
     private Arrow arrow;
