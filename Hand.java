@@ -33,7 +33,8 @@ public class Hand extends Actor
         checkBounds();
         mirrorToBall();
         hitBall(); // ⚡ new feature
-    }
+        
+}
 
     private void handleInput()
     {
@@ -46,7 +47,7 @@ if (Greenfoot.isKeyDown("d") || Greenfoot.isKeyDown("right")) {
 if ((Greenfoot.isKeyDown("s") || Greenfoot.isKeyDown("down")) && !onGround) {
     velocityY += 1.0;
 }
-        if (Greenfoot.isKeyDown("space") && onGround)
+        if ((Greenfoot.isKeyDown("space") || Greenfoot.isKeyDown("w") || Greenfoot.isKeyDown("up")) && onGround)
         {
             velocityY = -jumpPower;
             onGround = false;

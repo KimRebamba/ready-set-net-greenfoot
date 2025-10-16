@@ -189,6 +189,7 @@ if (basket != null)
         setLocation(100, 500);
         velocityX = 0;
         velocityY = 0;
+
         return;
     }
     else

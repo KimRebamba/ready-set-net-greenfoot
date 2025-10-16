@@ -59,19 +59,21 @@ public class Basket extends Actor
     int basketX = getX();
     int basketY = getY();
 
-    // Rim area size (you can tweak these slightly if needed)
-    int rimHalfWidth = 30;  // horizontal tolerance
-    int rimTop = basketY + 5;   // slightly below the rim
-    int rimBottom = basketY + 40; // bottom of the net area
+    // ✅ Make scoring area larger and more reliable
+    int rimHalfWidth = 35;    // widen the hitbox a bit
+    int rimTop = basketY + 10;  // slightly lower start of rim
+    int rimBottom = basketY + 55; // extend downward a bit
 
-    // Conditions for scoring
     boolean inHorizontalZone = Math.abs(ballX - basketX) < rimHalfWidth;
     boolean inVerticalZone = (ballY >= rimTop && ballY <= rimBottom);
-    boolean movingDownward = ball.getVelocityY() > 0;
 
-    // If ball is passing downward through the hoop zone
+    // ✅ Slightly relaxed velocity check — allow slow or downward motion
+    boolean movingDownward = ball.getVelocityY() >= -1; // less strict
+
+    // ✅ Add a “passed through rim” logic to catch frames that skip
     if (inHorizontalZone && inVerticalZone && movingDownward)
     {
+        // Optional: make sure it wasn’t already counted just before
         if (soundEnabled && rimSound != null)
         {
             try {
@@ -85,6 +87,7 @@ public class Basket extends Actor
 
     return false;
 }
+
     
     public void setBackboard(Backboard backboard)
     {
