@@ -53,6 +53,53 @@ public class Basketball extends Actor
     
     private void checkCollisions()
     {
+        // --- Hand Collision ---
+        Hand hand = (Hand) getOneIntersectingObject(Hand.class);
+        if (hand != null)
+        {
+            // Calculate collision direction
+            double dx = getX() - hand.getX();
+            double dy = getY() - hand.getY();
+            double distance = Math.sqrt(dx * dx + dy * dy);
+            double minDistance = 35; // Combined radius of ball and hand
+
+            if (distance < minDistance)
+            {
+                // Normalize direction
+                double nx = dx / distance;
+                double ny = dy / distance;
+
+                // Push ball away from hand
+                setLocation(
+                    (int)(hand.getX() + nx * minDistance),
+                    (int)(hand.getY() + ny * minDistance)
+                );
+
+                // Reflect velocity with some damping
+                double dot = velocityX * nx + velocityY * ny;
+                velocityX -= 2 * dot * nx;
+                velocityY -= 2 * dot * ny;
+
+                // Apply damping
+                velocityX *= bounceDamping;
+                velocityY *= bounceDamping;
+
+                // Add some extra force based on hand movement
+                velocityX += hand.getVelocityX() * 0.5;
+                velocityY += hand.getVelocityY() * 0.3;
+
+                // Small cutoff
+                if (Math.abs(velocityX) < 0.3) velocityX = 0;
+                if (Math.abs(velocityY) < 0.3) velocityY = 0;
+
+                // Sound
+                if (soundEnabled && bounceSound != null)
+                {
+                    try { playBounceSound(); } catch (Throwable t) { soundEnabled = false; }
+                }
+            }
+        }
+        
        // --- Boundary Collision ---
 Boundary boundary = (Boundary) getOneIntersectingObject(Boundary.class);
 if (boundary != null)

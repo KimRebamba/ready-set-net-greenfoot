@@ -13,6 +13,7 @@ public class MyWorld extends World
     private Basketball ball;
     private Basket basket;
     private Backboard backboard;
+    private Hand hand;
     private int score = 0;
     private ArrayList<Boundary> boundaries = new ArrayList<Boundary>();
     private int timeLeft = 120; // 60 seconds
@@ -45,6 +46,10 @@ public class MyWorld extends World
         ball = new Basketball();
         addObject(ball, 100, 500);
         
+        // Add defense hand
+        hand = new Hand();
+        addObject(hand, 400, 550); // Position hand in the middle-bottom area
+        
         // Add backboard and basket
         backboard = new Backboard();
         addObject(backboard, 770, 200);
@@ -64,6 +69,7 @@ public class MyWorld extends World
         // Display initial score and time
         showText("Score: " + score, 100, 30);
         showText("Time: " + timeLeft, 700, 30);
+        showText("Hand Controls: W(bounce) A(left) S(down) D(right) Space(jump)", 400, 570);
         
         // Initialize time end sound with error handling
         try {
@@ -161,6 +167,7 @@ public class MyWorld extends World
     {
         showText("Score: " + score, 100, 30);
         showText("Time: " + timeLeft, 700, 30);
+        showText("Hand Controls: W(bounce) A(left) S(down) D(right) Space(jump)", 400, 570);
     }
     
     public void addScore()
