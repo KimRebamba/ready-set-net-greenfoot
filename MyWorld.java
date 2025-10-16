@@ -57,6 +57,7 @@ public class MyWorld extends World
         basket = new Basket();
         addObject(basket, 725, 251); // Basket hangs below backboard
         
+
         // Connect backboard and basket
         backboard.setBasket(basket);
         basket.setBackboard(backboard);
@@ -69,7 +70,7 @@ public class MyWorld extends World
         // Display initial score and time
         showText("Score: " + score, 100, 30);
         showText("Time: " + timeLeft, 700, 30);
-        showText("Hand Controls: W(bounce) A(left) S(down) D(right) Space(jump)", 400, 570);
+        //showText("Hand Controls: W(bounce) A(left) S(down) D(right) Space(jump)", 400, 570);
         
         // Initialize time end sound with error handling
         try {
@@ -167,7 +168,7 @@ public class MyWorld extends World
     {
         showText("Score: " + score, 100, 30);
         showText("Time: " + timeLeft, 700, 30);
-        showText("Hand Controls: W(bounce) A(left) S(down) D(right) Space(jump)", 400, 570);
+        //showText("Hand Controls: W(bounce) A(left) S(down) D(right) Space(jump)", 400, 570);
     }
     
     public void addScore()

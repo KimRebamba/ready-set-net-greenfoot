@@ -260,13 +260,14 @@ if (basket != null)
             }
         }
         
-        // Check floor collision
-        if (getY() >= getWorld().getHeight() - 20)
-        {
-            setLocation(getX(), getWorld().getHeight() - 20);
-            velocityY = -velocityY * bounceDamping;
-            velocityX *= bounceDamping;
-            
+        // Check floor collision (raised floor)
+int groundY = getWorld().getHeight() - 45; // raise floor by 100 pixels
+
+if (getY() >= groundY)
+{
+    setLocation(getX(), groundY);
+    velocityY = -velocityY * bounceDamping;
+    velocityX *= bounceDamping;
             // Play bounce sound if enabled
             if (soundEnabled && bounceSound != null && Math.abs(velocityY) > 2)
             {
@@ -321,16 +322,17 @@ if (basket != null)
         }
     }
     
-    public void shoot(double deltaX, double deltaY, double power)
+public void shoot(double deltaX, double deltaY, double power)
+{
+    // Normalize the direction and apply power (INVERTED)
+    double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    if (distance > 0)
     {
-        // Normalize the direction and apply power
-        double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-        if (distance > 0)
-        {
-            velocityX = (deltaX / distance) * (power / 10.0);
-            velocityY = (deltaY / distance) * (power / 10.0);
-        }
+        velocityX = -(deltaX / distance) * (power / 10.0);
+        velocityY = -(deltaY / distance) * (power / 10.0);
     }
+}
+
     
     public double getVelocityX()
     {
@@ -351,5 +353,11 @@ if (basket != null)
     } catch (Throwable t) {
         soundEnabled = false;
     }
+}
+
+public void addVelocity(double vx, double vy)
+{
+    velocityX += vx;
+    velocityY += vy;
 }
 }

@@ -17,6 +17,7 @@ public class Arrow extends Actor
         GreenfootImage arrowImage = new GreenfootImage(50, 10);
         arrowImage.setColor(Color.WHITE);
         arrowImage.fillRect(0, 4, 40, 2);
+        
         // Draw triangle arrowhead using fillPolygon
         int[] xPoints = {40, 50, 40};
         int[] yPoints = {0, 5, 10};
@@ -37,12 +38,15 @@ public class Arrow extends Actor
         arrowImage.setColor(Color.WHITE);
         arrowImage.fillRect(0, 4, length, 2);
         // Draw triangle arrowhead using fillPolygon
-        int[] xPoints = {length, length + 10, length};
-        int[] yPoints = {0, 5, 10};
-        arrowImage.fillPolygon(xPoints, yPoints, 3);
-        
+        int[] xPoints = {10, 0, 10};
+int[] yPoints = {0, 5, 10};
+arrowImage.fillPolygon(xPoints, yPoints, 3);
+arrowImage.fillRect(10, 4, length, 2);
+
+    
         setImage(arrowImage);
     }
+    
     
     public void setVisible(boolean visible)
     {
@@ -64,4 +68,25 @@ public class Arrow extends Actor
     {
         return visible;
     }
+    
+    private boolean facingLeft = false;  
+private boolean lastFacingLeft = false;
+
+public void setFacingLeft(boolean facingLeft)
+{
+    this.facingLeft = facingLeft;
+    updateDirection();
+}
+
+private void updateDirection()
+{
+    if (facingLeft != lastFacingLeft)
+    {
+        GreenfootImage img = getImage();
+        img.mirrorHorizontally();
+        setImage(img);
+        lastFacingLeft = facingLeft;
+    }
+}
+
 }
