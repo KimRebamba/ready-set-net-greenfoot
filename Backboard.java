@@ -1,26 +1,22 @@
-import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
+import greenfoot.*;
 
-/**
- * Backboard actor that provides a surface for the ball to bounce off.
- * 
- * @author (your name)
- * @version (a version number or a date)
- */
 public class Backboard extends Actor
 {
     private Basket basket;
+    private final int WIDTH = 15;
+    private final int HEIGHT = 140;
+    private final int BALL_RADIUS = 21; // half of 42
     
     public Backboard()
     {
         GreenfootImage backboardImage = new GreenfootImage("images/backboard.png");
-        backboardImage.scale(15, 140);
+        backboardImage.scale(WIDTH, HEIGHT);
         setImage(backboardImage);
     }
     
     public void act()
     {
         // Backboard doesn't need to do anything in act()
-        // It just sits there and provides collision detection
     }
     
     public void setBasket(Basket basket)
@@ -37,17 +33,36 @@ public class Backboard extends Actor
     {
         if (getWorld() != null)
         {
-            // Move to a random location, ensuring it's not too high or too low
             int newX = Greenfoot.getRandomNumber(getWorld().getWidth() - 150) + 75;
-            int newY = Greenfoot.getRandomNumber(200) + 150; // Between 150 and 350 (more reasonable height)
+            int newY = Greenfoot.getRandomNumber(200) + 150;
             
             setLocation(newX, newY);
             
-            // Also move the basket to be positioned relative to the backboard
             if (basket != null)
             {
-                basket.setLocation(newX - 45, newY + 51); // Keeps same offset as original placement
+                basket.setLocation(newX - 45, newY + 51);
             }
         }
+    }
+    
+    // ✅ Get backboard bounds
+    public int getLeft()
+    {
+        return getX() - WIDTH / 2;
+    }
+    
+    public int getRight()
+    {
+        return getX() + WIDTH / 2;
+    }
+    
+    public int getTop()
+    {
+        return getY() - HEIGHT / 2;
+    }
+    
+    public int getBottom()
+    {
+        return getY() + HEIGHT / 2;
     }
 }

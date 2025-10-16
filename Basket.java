@@ -13,6 +13,7 @@ public class Basket extends Actor
     private boolean soundEnabled = true;
     private Backboard backboard;
     
+   
     private void playRimSound() {
     if (!soundEnabled) return;
 
@@ -56,24 +57,25 @@ public class Basket extends Actor
 {
     int ballX = ball.getX();
     int ballY = ball.getY();
+    int prevBallY = ball.getPrevY();
     int basketX = getX();
     int basketY = getY();
-
-    // ✅ Make scoring area larger and more reliable
-    int rimHalfWidth = 35;    // widen the hitbox a bit
-    int rimTop = basketY + 10;  // slightly lower start of rim
-    int rimBottom = basketY + 55; // extend downward a bit
-
+    
+    int rimHalfWidth = 35;
+    int rimTop = basketY + 10;
+    int rimBottom = basketY + 55;
+    
     boolean inHorizontalZone = Math.abs(ballX - basketX) < rimHalfWidth;
-    boolean inVerticalZone = (ballY >= rimTop && ballY <= rimBottom);
-
-    // ✅ Slightly relaxed velocity check — allow slow or downward motion
-    boolean movingDownward = ball.getVelocityY() >= -1; // less strict
-
-    // ✅ Add a “passed through rim” logic to catch frames that skip
-    if (inHorizontalZone && inVerticalZone && movingDownward)
+    
+    // ✅ Check if ball CROSSED the rim from ABOVE to BELOW using actual previous position
+    boolean crossedRimFromAbove = (prevBallY < rimTop && ballY >= rimTop);
+    
+    // Must be moving downward
+    boolean movingDownward = ball.getVelocityY() > 0.5;
+    
+    // STRICT: Only score if crossing from above with downward velocity
+    if (inHorizontalZone && crossedRimFromAbove && movingDownward)
     {
-        // Optional: make sure it wasn’t already counted just before
         if (soundEnabled && rimSound != null)
         {
             try {
@@ -84,7 +86,6 @@ public class Basket extends Actor
         }
         return true;
     }
-
     return false;
 }
 

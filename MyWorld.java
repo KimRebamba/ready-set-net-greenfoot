@@ -35,7 +35,7 @@ public class MyWorld extends World
     public MyWorld()
     {    
         // Create a new world with 800x600 cells with a cell size of 1x1 pixels.
-        super(800, 600, 1);
+        super(1100, 600, 1);
         
         // Set background
         GreenfootImage bg = new GreenfootImage("images/bg.png");

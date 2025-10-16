@@ -15,11 +15,18 @@ public class Basketball extends Actor
     private final double friction = 0.98;
     private GreenfootSound bounceSound;
     private boolean soundEnabled = true;
-    
+    // Add these fields at the top of Basketball class (with other private variables)
+private int prevX = 0;
+private int prevY = 0;
+// Add this getter method:
+public int getPrevY()
+{
+    return prevY;
+}
     public Basketball()
     {
         GreenfootImage ballImage = new GreenfootImage("images/basketball.png");
-        ballImage.scale(40, 40);
+        ballImage.scale(42, 42);
         setImage(ballImage);
         
         // Initialize sound with error handling
@@ -35,8 +42,12 @@ public class Basketball extends Actor
     public void act()
     {
         applyPhysics();
-        checkCollisions();
-        checkBounds();
+    checkCollisions();
+    checkBounds();
+    
+    // Store current position for next frame
+    prevX = getX();
+    prevY = getY();
     }
     
     private void applyPhysics()
@@ -51,6 +62,10 @@ public class Basketball extends Actor
         setLocation(getX() + (int) velocityX, getY() + (int) velocityY);
     }
     
+    public int getRimY() {
+    return getY() - 10; // adjust based on where the hoop opening is on your image
+}
+
     private void checkCollisions()
     {
         // --- Hand Collision ---
@@ -142,56 +157,98 @@ if (boundary != null)
     }
 }
         
-        // --- Backboard Collision ---
-        Backboard backboard = (Backboard) getOneIntersectingObject(Backboard.class);
-        if (backboard != null)
+        // --- Backboard Collision --- (REPLACE THE OLD SECTION WITH THIS)
+Backboard backboard = (Backboard) getOneIntersectingObject(Backboard.class);
+if (backboard != null)
+{
+    // ✅ Proper rectangular collision detection
+    int ballLeft = getX() - 21;
+    int ballRight = getX() + 21;
+    int ballTop = getY() - 21;
+    int ballBottom = getY() + 21;
+    
+    int bbLeft = backboard.getLeft();
+    int bbRight = backboard.getRight();
+    int bbTop = backboard.getTop();
+    int bbBottom = backboard.getBottom();
+    
+    // Check if actually overlapping
+    if (ballRight > bbLeft && ballLeft < bbRight && 
+        ballBottom > bbTop && ballTop < bbBottom)
     {
-        // Bounce
-        velocityX = -velocityX * bounceDamping;
-        velocityY *= bounceDamping;
-
-        // Push ball out stronger depending on velocity or at least a minimum offset
-        int push = (int) Math.max(4, Math.abs(velocityX) + 1);
-        if (getX() < backboard.getX())
-            setLocation(getX() - push, getY());
+        // Determine which side we hit
+        int overlapLeft = ballRight - bbLeft;
+        int overlapRight = bbRight - ballLeft;
+        int overlapTop = ballBottom - bbTop;
+        int overlapBottom = bbBottom - ballTop;
+        
+        int minOverlap = Math.min(Math.min(overlapLeft, overlapRight), 
+                                   Math.min(overlapTop, overlapBottom));
+        
+        // Hit from left or right
+        if (minOverlap == overlapLeft || minOverlap == overlapRight)
+        {
+            velocityX = -velocityX * bounceDamping;
+            
+            // Push ball out
+            int push = (int) Math.max(4, Math.abs(velocityX) + 1);
+            if (getX() < backboard.getX())
+                setLocation(getX() - push, getY());
+            else
+                setLocation(getX() + push, getY());
+        }
+        // Hit from top or bottom
         else
-            setLocation(getX() + push, getY());
-
-        // Prevent tiny jittering velocities
+        {
+            velocityY = -velocityY * bounceDamping;
+            
+            // Push ball out
+            int push = (int) Math.max(4, Math.abs(velocityY) + 1);
+            if (getY() < backboard.getY())
+                setLocation(getX(), getY() - push);
+            else
+                setLocation(getX(), getY() + push);
+        }
+        
+        // Prevent tiny jittering
         if (Math.abs(velocityX) < 0.5) velocityX = 0;
         if (Math.abs(velocityY) < 0.5) velocityY = 0;
-
-        // Minimum rebound to prevent sliding
-        if (Math.abs(velocityX) < 2) velocityX = (velocityX > 0 ? 2 : -2);
-
+        
+        // Minimum rebound
+        if (Math.abs(velocityX) < 2 && velocityX != 0) 
+            velocityX = (velocityX > 0 ? 2 : -2);
+        if (Math.abs(velocityY) < 2 && velocityY != 0) 
+            velocityY = (velocityY > 0 ? 2 : -2);
+        
         // Sound
-        if (soundEnabled && bounceSound != null && Math.abs(velocityX) > 2)
+        if (soundEnabled && bounceSound != null && 
+            (Math.abs(velocityX) > 2 || Math.abs(velocityY) > 2))
         {
             try {
-               playBounceSound();
+                playBounceSound();
             } catch (Throwable t) {
                 soundEnabled = false;
             }
         }
     }
+}
 
   // --- Basket Collision ---
 Basket basket = (Basket) getOneIntersectingObject(Basket.class);
 if (basket != null)
 {
-    // Check if ball scored (passed inside the hoop area)
-    if (basket.checkScore(this))
-    {
-        MyWorld world = (MyWorld) getWorld();
-        world.addScore();
+    // Only score if the ball is moving downward through the rim area
+if (basket.checkScore(this) && velocityY > 0)
+{
+    MyWorld world = (MyWorld) getWorld();
+    world.addScore();
 
-        // Reset
-        setLocation(100, 500);
-        velocityX = 0;
-        velocityY = 0;
-
-        return;
-    }
+    // Reset ball
+    //setLocation(100, 500);
+    velocityX = 0;
+    velocityY = 0;
+    return;
+}
     else
     {
         // Calculate relative position of the ball to the basket
@@ -200,10 +257,10 @@ if (basket != null)
 
         // --- CONDITIONS ---
         // Ignore collision if ball is ABOVE rim and moving downward (about to score)
-        if (dy < -10 && velocityY > 0)
-        {
-            return; // allow natural fall
-        }
+        if (dy < -20 && velocityY > 0)
+{
+    return; // let it fall through naturally
+}
 
         // --- SIDE OR UNDERNEATH COLLISION ---
         if (dy > 0 || Math.abs(dx) > 25)
