@@ -34,12 +34,12 @@ public class MyWorld extends World
      */
     public MyWorld()
     {    
-        // Create a new world with 800x600 cells with a cell size of 1x1 pixels.
+        // Create a new world with 1100x600 cells with a cell size of 1x1 pixels.
         super(1100, 600, 1);
         
         // Set background
-        GreenfootImage bg = new GreenfootImage("images/bg.png");
-        bg.scale(800, 600);
+        GreenfootImage bg = new GreenfootImage("images/bg3.png");
+        bg.scale(1100, 600);
         setBackground(bg);
         
         // Add basketball
@@ -52,10 +52,10 @@ public class MyWorld extends World
         
         // Add backboard and basket
         backboard = new Backboard();
-        addObject(backboard, 770, 200);
+        addObject(backboard, 1080, 200);
         
         basket = new Basket();
-        addObject(basket, 725, 251); // Basket hangs below backboard
+        addObject(basket, 1035, 251); // Basket hangs below backboard
         
 
         // Connect backboard and basket
@@ -68,8 +68,8 @@ public class MyWorld extends World
         arrow.setVisible(false);
         
         // Display initial score and time
-        showText("Score: " + score, 100, 30);
-        showText("Time: " + timeLeft, 700, 30);
+        //showText("Score: " + score, 100, 30);
+        //showText("Time: " + timeLeft, 1000, 30);
         //showText("Hand Controls: W(bounce) A(left) S(down) D(right) Space(jump)", 400, 570);
         
         // Initialize time end sound with error handling
@@ -165,11 +165,17 @@ public class MyWorld extends World
     }
     
     private void updateUI()
-    {
-        showText("Score: " + score, 100, 30);
-        showText("Time: " + timeLeft, 700, 30);
-        //showText("Hand Controls: W(bounce) A(left) S(down) D(right) Space(jump)", 400, 570);
-    }
+{
+    // Clear old text (by redrawing background each frame)
+    GreenfootImage bg = new GreenfootImage("images/bg.png");
+    bg.scale(1100, 600);
+    setBackground(bg);
+    
+    // Draw new text
+    drawGameText("Score: ", score, 40, 20, Color.WHITE, Color.BLACK);
+    drawGameText("Time: ", timeLeft, 950, 20, Color.RED, Color.BLACK);
+}
+
     
     public void addScore()
     {
@@ -293,4 +299,23 @@ public class MyWorld extends World
     {
         return gameOver;
     }
+    
+    private void drawGameText(String label, int value, int x, int y, Color mainColor, Color outlineColor)
+{
+    String text = label + value;
+    Font font = new Font("Arial", true, false, 28); // Bold, 28px
+    GreenfootImage img = new GreenfootImage(text, 28, mainColor, new Color(0, 0, 0, 0));
+
+    // Create outline
+    GreenfootImage outline = new GreenfootImage(text, 28, outlineColor, new Color(0, 0, 0, 0));
+    GreenfootImage combined = new GreenfootImage(img.getWidth() + 4, img.getHeight() + 4);
+    for (int dx = -2; dx <= 2; dx++)
+        for (int dy = -2; dy <= 2; dy++)
+            combined.drawImage(outline, dx + 2, dy + 2);
+    combined.drawImage(img, 2, 2);
+
+    // Draw final image
+    getBackground().drawImage(combined, x, y);
+}
+
 }

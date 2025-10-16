@@ -67,14 +67,17 @@ public class Basket extends Actor
     
     boolean inHorizontalZone = Math.abs(ballX - basketX) < rimHalfWidth;
     
-    // ✅ Check if ball CROSSED the rim from ABOVE to BELOW using actual previous position
+    // ✅ Check if ball CROSSED the rim from ABOVE to BELOW
+    // This catches both normal passes and fast bounces
     boolean crossedRimFromAbove = (prevBallY < rimTop && ballY >= rimTop);
     
-    // Must be moving downward
+    // ✅ ALSO check if ball is currently in the zone moving downward
+    // This catches cases where the ball enters the zone mid-frame
+    boolean inVerticalZone = (ballY >= rimTop && ballY <= rimBottom);
     boolean movingDownward = ball.getVelocityY() > 0.5;
     
-    // STRICT: Only score if crossing from above with downward velocity
-    if (inHorizontalZone && crossedRimFromAbove && movingDownward)
+    // Must be moving downward
+    if (inHorizontalZone && movingDownward && (crossedRimFromAbove || inVerticalZone))
     {
         if (soundEnabled && rimSound != null)
         {
