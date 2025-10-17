@@ -240,7 +240,7 @@ if (basket != null)
     // Only score if the ball is moving downward through the rim area
 if (basket.checkScore(this) && velocityY > 0)
 {
-    MyWorld world = (MyWorld) getWorld();
+    BasketballWorld world = (BasketballWorld) getWorld();
     world.addScore();
 
     // Reset ball

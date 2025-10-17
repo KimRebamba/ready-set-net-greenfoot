@@ -1,0 +1,19 @@
+#BlueJ class context
+comment0.target=MenuWorld
+comment0.text=\r\n\ Menu\ world\ for\ selecting\ which\ game\ to\ play.\r\n\ \r\n\ @author\ (your\ name)\ \r\n\ @version\ (a\ version\ number\ or\ a\ date)\r\n
+comment1.params=
+comment1.target=MenuWorld()
+comment1.text=\r\n\ Constructor\ for\ objects\ of\ class\ MenuWorld.\r\n
+comment2.params=
+comment2.target=void\ drawTitle()
+comment3.params=
+comment3.target=void\ drawButtons()
+comment4.params=text\ centerX\ centerY\ color
+comment4.target=void\ drawButton(java.lang.String,\ int,\ int,\ greenfoot.Color)
+comment5.params=
+comment5.target=void\ act()
+comment6.params=
+comment6.target=void\ checkButtonClicks()
+comment7.params=mouseX\ mouseY\ buttonCenterX\ buttonCenterY
+comment7.target=boolean\ isInButton(int,\ int,\ int,\ int)
+numComments=8
