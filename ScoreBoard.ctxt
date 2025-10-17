@@ -1,0 +1,9 @@
+#BlueJ class context
+comment0.target=ScoreBoard
+comment1.params=
+comment1.target=ScoreBoard()
+comment2.params=leftScore\ rightScore
+comment2.target=void\ update(int,\ int)
+comment3.params=surface\ text\ mainColor\ outlineColor\ size
+comment3.target=void\ drawCenteredOutlinedText(greenfoot.GreenfootImage,\ java.lang.String,\ greenfoot.Color,\ greenfoot.Color,\ int)
+numComments=4
