@@ -14,8 +14,11 @@ public class Basketball extends Actor
     private final double bounceDamping = 0.7;
     private final double friction = 0.98;
     private GreenfootSound bounceSound;
-    private boolean soundEnabled = true;
-    // Add these fields at the top of Basketball class (with other private variables)
+private GreenfootSound scoreSound;
+private GreenfootSound backboardSound;
+private GreenfootSound smackSound;
+private boolean soundEnabled = true;
+    
 private int prevX = 0;
 private int prevY = 0;
 // Add this getter method:
@@ -29,14 +32,15 @@ public int getPrevY()
         ballImage.scale(42, 42);
         setImage(ballImage);
         
-        // Initialize sound with error handling
         try {
-            bounceSound = new GreenfootSound("sounds/bounce.wav");
-        } catch (Throwable t) {
-            System.out.println("Could not load bounce sound: " + t.getMessage());
-            soundEnabled = false;
-            bounceSound = null;
-        }
+            smackSound = new GreenfootSound("sounds/basketball_smack.wav");
+    bounceSound = new GreenfootSound("sounds/basketball_bounce.wav");
+    scoreSound = new GreenfootSound("sounds/basketball_score.wav");
+    backboardSound = new GreenfootSound("sounds/basketball_backboard.wav");
+} catch (Throwable t) {
+    System.out.println("Could not load one or more sounds: " + t.getMessage());
+    soundEnabled = false;
+}
     }
     
     public void act()
@@ -69,51 +73,57 @@ public int getPrevY()
     private void checkCollisions()
     {
         // --- Hand Collision ---
-        Hand hand = (Hand) getOneIntersectingObject(Hand.class);
-        if (hand != null)
-        {
-            // Calculate collision direction
-            double dx = getX() - hand.getX();
-            double dy = getY() - hand.getY();
-            double distance = Math.sqrt(dx * dx + dy * dy);
-            double minDistance = 35; // Combined radius of ball and hand
-
-            if (distance < minDistance)
-            {
-                // Normalize direction
-                double nx = dx / distance;
-                double ny = dy / distance;
-
-                // Push ball away from hand
-                setLocation(
-                    (int)(hand.getX() + nx * minDistance),
-                    (int)(hand.getY() + ny * minDistance)
-                );
-
-                // Reflect velocity with some damping
-                double dot = velocityX * nx + velocityY * ny;
-                velocityX -= 2 * dot * nx;
-                velocityY -= 2 * dot * ny;
-
-                // Apply damping
-                velocityX *= bounceDamping;
-                velocityY *= bounceDamping;
-
-                // Add some extra force based on hand movement
-                velocityX += hand.getVelocityX() * 0.5;
-                velocityY += hand.getVelocityY() * 0.3;
-
-                // Small cutoff
-                if (Math.abs(velocityX) < 0.3) velocityX = 0;
-                if (Math.abs(velocityY) < 0.3) velocityY = 0;
-
-                // Sound
-                if (soundEnabled && bounceSound != null)
-                {
-                    try { playBounceSound(); } catch (Throwable t) { soundEnabled = false; }
-                }
-            }
+Hand hand = (Hand) getOneIntersectingObject(Hand.class);
+if (hand != null)
+{
+    // --- Play sound immediately on contact ---
+    if (soundEnabled && smackSound != null)
+    {
+        try {
+            if (smackSound.isPlaying()) smackSound.stop(); // reset overlapping sound
+            smackSound.play();
+        } catch (Throwable t) {
+            soundEnabled = false;
         }
+    }
+
+    // Calculate collision direction
+    double dx = getX() - hand.getX();
+    double dy = getY() - hand.getY();
+    double distance = Math.sqrt(dx * dx + dy * dy);
+    double minDistance = 35; // Combined radius of ball and hand
+
+    if (distance < minDistance)
+    {
+        // Normalize direction
+        double nx = dx / distance;
+        double ny = dy / distance;
+
+        // Push ball away from hand
+        setLocation(
+            (int)(hand.getX() + nx * minDistance),
+            (int)(hand.getY() + ny * minDistance)
+        );
+
+        // Reflect velocity with some damping
+        double dot = velocityX * nx + velocityY * ny;
+        velocityX -= 2 * dot * nx;
+        velocityY -= 2 * dot * ny;
+
+        // Apply damping
+        velocityX *= bounceDamping;
+        velocityY *= bounceDamping;
+
+        // Add some extra force based on hand movement
+        velocityX += hand.getVelocityX() * 0.5;
+        velocityY += hand.getVelocityY() * 0.3;
+
+        // Small cutoff
+        if (Math.abs(velocityX) < 0.3) velocityX = 0;
+        if (Math.abs(velocityY) < 0.3) velocityY = 0;
+    }
+}
+
         
        // --- Boundary Collision ---
 Boundary boundary = (Boundary) getOneIntersectingObject(Boundary.class);
@@ -152,7 +162,7 @@ if (boundary != null)
         // Sound
         if (soundEnabled && bounceSound != null)
         {
-            try { playBounceSound(); } catch (Throwable t) { soundEnabled = false; }
+            try { if (soundEnabled && bounceSound != null) bounceSound.play(); } catch (Throwable t) { soundEnabled = false; }
         }
     }
 }
@@ -221,15 +231,11 @@ if (backboard != null)
             velocityY = (velocityY > 0 ? 2 : -2);
         
         // Sound
-        if (soundEnabled && bounceSound != null && 
-            (Math.abs(velocityX) > 2 || Math.abs(velocityY) > 2))
-        {
-            try {
-                playBounceSound();
-            } catch (Throwable t) {
-                soundEnabled = false;
-            }
-        }
+       if (soundEnabled && backboardSound != null &&
+    (Math.abs(velocityX) > 2 || Math.abs(velocityY) > 2))
+{
+    backboardSound.play();
+}
     }
 }
 
@@ -240,6 +246,7 @@ if (basket != null)
     // Only score if the ball is moving downward through the rim area
 if (basket.checkScore(this) && velocityY > 0)
 {
+    if (soundEnabled && scoreSound != null) scoreSound.play();
     BasketballWorld world = (BasketballWorld) getWorld();
     world.addScore();
 
@@ -286,7 +293,7 @@ if (basket.checkScore(this) && velocityY > 0)
             if (soundEnabled && bounceSound != null)
             {
                 try {
-                    playBounceSound();
+                    if (soundEnabled && bounceSound != null) bounceSound.play();
                 } catch (Throwable t) {
                     soundEnabled = false;
                 }
@@ -310,7 +317,7 @@ if (basket.checkScore(this) && velocityY > 0)
             if (soundEnabled && bounceSound != null && Math.abs(velocityY) > 2)
             {
                 try {
-                    playBounceSound();
+                   if (soundEnabled && bounceSound != null) bounceSound.play();
                 } catch (Throwable t) {
                     // Sound failed to play, continue silently
                     soundEnabled = false;
@@ -330,7 +337,7 @@ if (getY() >= groundY)
             if (soundEnabled && bounceSound != null && Math.abs(velocityY) > 2)
             {
                 try {
-                    playBounceSound();
+                    if (soundEnabled && bounceSound != null) bounceSound.play();
                 } catch (Throwable t) {
                     // Sound failed to play, continue silently
                     soundEnabled = false;
@@ -371,7 +378,7 @@ if (getY() >= groundY)
             if (soundEnabled && bounceSound != null && Math.abs(velocityX) > 2)
             {
                 try {
-                    playBounceSound();
+                    if (soundEnabled && bounceSound != null) bounceSound.play();
                 } catch (Throwable t) {
                     // Sound failed to play, continue silently
                     soundEnabled = false;
@@ -402,16 +409,6 @@ public void shoot(double deltaX, double deltaY, double power)
         return velocityY;
     }
     
-    private void playBounceSound() {
-    if (!soundEnabled) return;
-
-    try {
-        GreenfootSound s = new GreenfootSound("sounds/bounce.wav");
-        s.play();
-    } catch (Throwable t) {
-        soundEnabled = false;
-    }
-}
 
 public void addVelocity(double vx, double vy)
 {

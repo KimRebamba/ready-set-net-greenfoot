@@ -8,11 +8,11 @@ public class Hand extends Actor
 {
     private double velocityX = 0;
     private double velocityY = 0;
-    private final double gravity = 0.2;
+    private final double gravity = 0.8;
     private final double bounceDamping = 0.8;
-    private final double friction = 0.95;
+    private final double friction = 0.90;
     private final double moveSpeed = 7.0;
-    private final double jumpPower = 15.0;
+    private final double jumpPower = 27.0;
     private final double bouncePower = 4.0;
     private boolean onGround = false;
     private int groundY = 0;

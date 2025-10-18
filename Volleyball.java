@@ -10,11 +10,40 @@ public class Volleyball extends Actor {
     private int lastNetHitFrame = -10;
     private static int frameCounter = 0;
     private final int GROUND_LEVEL_OFFSET = 27; // raised ground (same as player)
-      
+    // --- Sounds ---
+    private GreenfootSound volleyballSound;
+    private GreenfootSound volleyballSmash;
+    private boolean soundEnabled = true;
+    
+    public double getVelocityX() {
+    return dx;
+}
+
+public double getVelocityY() {
+    return dy;
+}
+public void setVelocity(double x, double y) {
+    dx = x;
+    dy = y;
+}
+
+public void playSmashSound() {
+    GreenfootSound smash = new GreenfootSound("volleyball_smash.wav");
+    smash.play();
+}
+
     public Volleyball() {
         GreenfootImage img = new GreenfootImage("volleyball.png");
         img.scale(80, 80);
         setImage(img);
+        
+        try {
+            volleyballSound = new GreenfootSound("volleyball_sound.wav");
+            volleyballSmash = new GreenfootSound("volleyball_smash.wav");
+        } catch (Throwable t) {
+            System.out.println("⚠ Could not load volleyball sounds: " + t.getMessage());
+            soundEnabled = false;
+        }
     }
     
     public void act() {
@@ -105,49 +134,60 @@ public class Volleyball extends Actor {
                 setLocation(getX(), netBottom + getImage().getHeight() / 2 + 2);
             }
         }
-       // --- Player collision ---
-VolleyballPlayer player = (VolleyballPlayer)getOneIntersectingObject(VolleyballPlayer.class);
-if (player != null) {
-    double hitAngle;
-    double hitSpeed = Math.sqrt(dx*dx + dy*dy) + 5;
-    hitSpeed = Math.min(hitSpeed, 20);
 
-    boolean isLeftPlayer = player.getX() < getWorld().getWidth() / 2;
+        // --- Player collision ---
+        VolleyballPlayer player = (VolleyballPlayer)getOneIntersectingObject(VolleyballPlayer.class);
+        if (player != null) {
+            double hitAngle;
+            double hitSpeed = Math.sqrt(dx*dx + dy*dy) + 5;
+            hitSpeed = Math.min(hitSpeed, 20);
 
-    // --- Spike detection (upper hit zone) ---
-    if (getY() < player.getY() - player.getImage().getHeight() / 3) {
-        // SPIKE TIME 💥
-        double spikeSpeed = 25 + Greenfoot.getRandomNumber(10); // fast and brutal
+            boolean isLeftPlayer = player.getX() < getWorld().getWidth() / 2;
 
-        // Correct spike angle: always downward toward the opponent’s court
-        double spikeAngle;
-        if (isLeftPlayer) {
-            spikeAngle = Math.toRadians(-60); // down-right
-        } else {
-            spikeAngle = Math.toRadians(-120); // down-left
+            // --- Spike detection (upper hit zone) ---
+            if (getY() < player.getY() - player.getImage().getHeight() / 3) {
+                // SPIKE 💥
+                double spikeSpeed = 25 + Greenfoot.getRandomNumber(10); // fast and brutal
+                double spikeAngle = isLeftPlayer ? Math.toRadians(-60) : Math.toRadians(-120);
+
+                dx = Math.cos(spikeAngle) * spikeSpeed;
+                dy = Math.sin(spikeAngle) * spikeSpeed;
+
+                // 🔊 Smash sound
+                if (soundEnabled && volleyballSmash != null) {
+                    try {
+                        if (volleyballSmash.isPlaying()) volleyballSmash.stop();
+                        volleyballSmash.play();
+                    } catch (Throwable t) {
+                        soundEnabled = false;
+                    }
+                }
+            } 
+            else {
+                // Normal hit (side or lower part)
+                hitAngle = Math.atan2(getY() - player.getY(), getX() - player.getX());
+                hitAngle -= Math.PI / 12;
+
+                dx = Math.cos(hitAngle) * hitSpeed;
+                dy = Math.sin(hitAngle) * hitSpeed;
+
+                // 🔊 Regular touch sound
+                if (soundEnabled && volleyballSound != null) {
+                    try {
+                        if (volleyballSound.isPlaying()) volleyballSound.stop();
+                        volleyballSound.play();
+                    } catch (Throwable t) {
+                        soundEnabled = false;
+                    }
+                }
+            }
+
+            // Small offset so it doesn't get stuck inside player
+            setLocation(
+                getX() + (int)(Math.cos(Math.atan2(dy, dx)) * 10),
+                getY() + (int)(Math.sin(Math.atan2(dy, dx)) * 10)
+            );
         }
-
-        dx = Math.cos(spikeAngle) * spikeSpeed;
-        dy = Math.sin(spikeAngle) * spikeSpeed;
-
-        // Greenfoot.playSound("spike.wav");
-    } 
-    else {
-        // Normal hit (side or lower part)
-        hitAngle = Math.atan2(getY() - player.getY(), getX() - player.getX());
-        hitAngle -= Math.PI / 12;
-
-        dx = Math.cos(hitAngle) * hitSpeed;
-        dy = Math.sin(hitAngle) * hitSpeed;
-    }
-
-    // Small offset so it doesn't get stuck inside player
-    setLocation(
-        getX() + (int)(Math.cos(Math.atan2(dy, dx)) * 10),
-        getY() + (int)(Math.sin(Math.atan2(dy, dx)) * 10)
-    );
-}
-
-
     }
 }
+

@@ -7,7 +7,7 @@ public class VolleyballWorld extends World {
     private VolleyballNet net;
     private ScoreBoard scoreBoard;
 
-    private int player1Score = 24;
+    private int player1Score = 0;
     private int player2Score = 0;
 
     private boolean pointAwarded = false;
@@ -15,20 +15,37 @@ public class VolleyballWorld extends World {
     private int serveDelayTimer = 0;
 
     private boolean gameOver = false;
+    private boolean gameStarted = false; 
+
+    // Instruction screen delay
+    private int startDelay = 30; // frames (~0.5s) before input is accepted
 
     // Message handling
     private int messageTimer = 0;
     private String activeMessage = null;
 
+    private GreenfootSound whistleSound = new GreenfootSound("volleyball_whistle.wav");
+    private GreenfootSound endSound = new GreenfootSound("whistle_end.wav");
+
     public VolleyballWorld() {
         super(1100, 600, 1);
-        GreenfootImage bg = new GreenfootImage("bg2.png");
-        bg.scale(1100, 600);
-        setBackground(bg);
-        prepareGame();
+        showInstructions();
+    }
+
+    private void showInstructions() {
+        GreenfootImage instructions = new GreenfootImage("volleyball_instructions.png");
+        instructions.scale(1100, 602);
+        setBackground(instructions);
     }
 
     private void prepareGame() {
+        whistleSound.play();
+
+        // Background
+        GreenfootImage bg = new GreenfootImage("bg2.png");
+        bg.scale(1100, 600);
+        setBackground(bg);
+
         // Net
         net = new VolleyballNet();
         GreenfootImage netImage = net.getImage();
@@ -37,7 +54,7 @@ public class VolleyballWorld extends World {
 
         // Players
         player1 = new VolleyballPlayer(true);
-        player2 = new VolleyballPlayer(false);
+        player2 = new VolleyballPlayer(false, false, "impossible");
         addObject(player1, 200, getHeight() - 100);
         addObject(player2, 900, getHeight() - 100);
 
@@ -50,6 +67,29 @@ public class VolleyballWorld extends World {
     }
 
     public void act() {
+        // --- Instruction screen phase ---
+    if (!gameStarted) {
+        if (startDelay > 0) {
+            startDelay--;
+            return;
+        }
+
+        // Wait for 3 seconds (≈120 frames) or any input
+        if (startDelay <= 0) {
+            if ( startDelay == -120) {
+                gameStarted = true;
+                prepareGame();
+                return;
+            }
+            startDelay--; // count down to -120
+            if (startDelay < -120) { // auto-start after 3s
+                gameStarted = true;
+                prepareGame();
+            }
+        }
+        return;
+    }
+
         // ESC key → back to menu
         if (Greenfoot.isKeyDown("escape")) {
             Greenfoot.setWorld(new MenuWorld());
@@ -84,54 +124,47 @@ public class VolleyballWorld extends World {
     }
 
     private void checkScore() {
-    if (ball == null) return;
+        if (ball == null) return;
 
-    int groundY = getHeight() - 27;
+        int groundY = getHeight() - 27;
 
-    if (!pointAwarded && ball.getY() >= groundY - ball.getImage().getHeight() / 2) {
-        pointAwarded = true;
+        if (!pointAwarded && ball.getY() >= groundY - ball.getImage().getHeight() / 2) {
+            pointAwarded = true;
 
-        boolean leftLost = (ball.getX() < getWidth() / 2);
-        if (leftLost) {
-            player2Score++;
-            isServingLeft = false;
-        } else {
-            player1Score++;
-            isServingLeft = true;
+            boolean leftLost = (ball.getX() < getWidth() / 2);
+            if (leftLost) {
+                player2Score++;
+                isServingLeft = false;
+            } else {
+                player1Score++;
+                isServingLeft = true;
+            }
+
+            scoreBoard.update(player1Score, player2Score);
+            new GreenfootSound("volleyball_whistle.wav").play();
+
+            if (player1Score >= 25 || player2Score >= 25) {
+                clearTextArea();
+                endGame();
+                return;
+            }
+
+            showPointMessage(leftLost ? "Right side scores!" : "Left side scores!");
+            serveDelayTimer = 100;
         }
-
-        scoreBoard.update(player1Score, player2Score);
-
-        // Check for winner first before showing message
-        if (player1Score >= 25 || player2Score >= 25) {
-            clearTextArea();
-            
-            endGame();
-            return; // stop here — no “Left/Right side scores!” message
-        }
-
-        // Only show this if the game isn’t over
-        showPointMessage(leftLost ? "Right side scores!" : "Left side scores!");
-        serveDelayTimer = 100;
     }
-}
-
 
     private void endGame() {
-    gameOver = true;
-
-    String winner = (player1Score >= 25) ? "LEFT SIDE WINS!" : "RIGHT SIDE WINS!";
-    drawOutlinedText(winner, getWidth() / 2, 100, Color.GREEN, Color.BLACK, 50); // was 250 → now 200
-    drawOutlinedText("Press ESC to return to menu", getWidth() / 2, 170, Color.WHITE, Color.BLACK, 30); // was 320 → now 280
-}
-
+        gameOver = true;
+        endSound.play();
+        String winner = (player1Score >= 25) ? "LEFT SIDE WINS!" : "RIGHT SIDE WINS!";
+        drawOutlinedText(winner, getWidth() / 2, 100, Color.GREEN, Color.BLACK, 50);
+        drawOutlinedText("Press ESC to return to menu", getWidth() / 2, 170, Color.WHITE, Color.BLACK, 30);
+    }
 
     private void resetBall() {
-        
-        if (gameOver) {
-            return;
-        }
-        
+        if (gameOver) return;
+
         if (ball != null) removeObject(ball);
         spawnNewBall(isServingLeft ? 200 : 900, getHeight() / 2 - 100);
         ball.setInitialVelocity(isServingLeft ? 4 : -4, -6);

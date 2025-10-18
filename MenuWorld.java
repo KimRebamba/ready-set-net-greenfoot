@@ -30,7 +30,7 @@ public class MenuWorld extends World
         setBackground(bg);
         
         // Draw title
-        drawTitle();
+        //drawTitle();
         
         // Draw menu buttons
         drawButtons();

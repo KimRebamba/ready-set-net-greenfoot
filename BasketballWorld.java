@@ -38,7 +38,7 @@ public class BasketballWorld extends World
         super(1100, 600, 1);
         
         // Set background
-        GreenfootImage bg = new GreenfootImage("images/bg3.png");
+        GreenfootImage bg = new GreenfootImage("images/bg.png");
         bg.scale(1100, 600);
         setBackground(bg);
         
@@ -168,7 +168,7 @@ public class BasketballWorld extends World
     private void updateUI()
     {
         // Clear old text (by redrawing background each frame)
-        GreenfootImage bg = new GreenfootImage("images/bg3.png");
+        GreenfootImage bg = new GreenfootImage("images/bg.png");
         bg.scale(1100, 600);
         setBackground(bg);
         
