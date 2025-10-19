@@ -12,7 +12,7 @@ Play basketball, volleyball, or badminton, alone or with a friend, and challenge
 ![demo gif](demo/demo_menu.gif)
 - Single-player & Two-player modes
 ![demo gif](demo/demo_cpu.gif)
-![demo gif](demo/demo_cpu.gif)
+![demo gif](demo/demo_twoplayers.gif)
 
 - Difficulty levels: Easy, Medium, Hard, Expert, Impossible (single-player only)
 - Background music & sound effects
