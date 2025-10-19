@@ -1,4 +1,4 @@
-# Ready. Set. Net! by Kim.
+# Ready. Set. Net! by Kim. (24 MB)
 
 Ready. Set. Net! is a mini-game with sports that have.. nets.. built with Greenfoot ( a lot of Java).
 
