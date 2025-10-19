@@ -41,7 +41,7 @@ public class Volleyball extends Actor {
         setImage(img);
         
         try {
-            volleyballSound = new GreenfootSound("volleyball_sound.wav");
+            volleyballSound = new GreenfootSound("basketball_bounce.wav");
             volleyballSmash = new GreenfootSound("volleyball_smash.wav");
         } catch (Throwable t) {
             System.out.println("Could not load volleyball sounds: " + t.getMessage());
@@ -163,7 +163,7 @@ public class Volleyball extends Actor {
                 // Play smash sound for spike
                 if (soundEnabled && volleyballSmash != null) {
                     try {
-                        volleyballSmash = new GreenfootSound("volleyball_smash.wav");
+                        
                         volleyballSmash.play();
                     } catch (Throwable t) {
                         soundEnabled = false;
@@ -181,7 +181,7 @@ public class Volleyball extends Actor {
                 // Play regular hit sound
                 if (soundEnabled && volleyballSound != null) {
                     try {
-                        volleyballSound = new GreenfootSound("volleyball_sound.wav");
+                        
                         volleyballSound.play();
                     } catch (Throwable t) {
                         soundEnabled = false;
