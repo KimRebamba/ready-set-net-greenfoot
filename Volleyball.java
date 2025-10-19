@@ -9,28 +9,31 @@ public class Volleyball extends Actor {
     private final double NET_BOUNCE_STRENGTH = 1.2;
     private int lastNetHitFrame = -10;
     private static int frameCounter = 0;
-    private final int GROUND_LEVEL_OFFSET = 27; // raised ground (same as player)
-    // --- Sounds ---
+    private final int GROUND_LEVEL_OFFSET = 27;
+    private final int SPIKE_PROXIMITY = 80;
+    private final int SPIKE_HEIGHT = 60;
+    
     private GreenfootSound volleyballSound;
     private GreenfootSound volleyballSmash;
     private boolean soundEnabled = true;
     
     public double getVelocityX() {
-    return dx;
-}
+        return dx;
+    }
 
-public double getVelocityY() {
-    return dy;
-}
-public void setVelocity(double x, double y) {
-    dx = x;
-    dy = y;
-}
+    public double getVelocityY() {
+        return dy;
+    }
+    
+    public void setVelocity(double x, double y) {
+        dx = x;
+        dy = y;
+    }
 
-public void playSmashSound() {
-    GreenfootSound smash = new GreenfootSound("volleyball_smash.wav");
-    smash.play();
-}
+    public void playSmashSound() {
+        GreenfootSound smash = new GreenfootSound("volleyball_smash.wav");
+        smash.play();
+    }
 
     public Volleyball() {
         GreenfootImage img = new GreenfootImage("volleyball.png");
@@ -41,7 +44,7 @@ public void playSmashSound() {
             volleyballSound = new GreenfootSound("volleyball_sound.wav");
             volleyballSmash = new GreenfootSound("volleyball_smash.wav");
         } catch (Throwable t) {
-            System.out.println("⚠ Could not load volleyball sounds: " + t.getMessage());
+            System.out.println("Could not load volleyball sounds: " + t.getMessage());
             soundEnabled = false;
         }
     }
@@ -58,34 +61,34 @@ public void playSmashSound() {
     }
     
     private void applyPhysics() {
-    dy += GRAVITY;
+        dy += GRAVITY;
 
-    // --- Limit how high the ball can go ---
-    if (dy < -15) dy = -15; // cap upward velocity (prevents rocket spikes)
+        // Cap upward velocity to prevent unrealistic rocket-like spikes
+        if (dy < -15) dy = -15;
 
-    dx *= AIR_RESISTANCE;
-    setLocation(getX() + (int)dx, getY() + (int)dy);
+        dx *= AIR_RESISTANCE;
+        setLocation(getX() + (int)dx, getY() + (int)dy);
 
-    // --- Prevent the ball from touching or clipping the ceiling ---
-    int ceilingLimit = getImage().getHeight() / 2 + 50; // adjust the 50 for lower or higher arc
-    if (getY() < ceilingLimit) {
-        setLocation(getX(), ceilingLimit);
-        dy = 0; // stop upward motion
+        // Keep ball from going through ceiling
+        int ceilingLimit = getImage().getHeight() / 2 + 50;
+        if (getY() < ceilingLimit) {
+            setLocation(getX(), ceilingLimit);
+            dy = 0;
+        }
     }
-}
     
     private void checkCollisions() {
-        // Wall collisions
+        // Handle ball bouncing off left and right walls
         if (getX() <= 0 || getX() >= getWorld().getWidth()) {
             dx = -dx * BOUNCE_DAMPING;
         }
         
-        // Ceiling collision
+        // Handle ball bouncing off ceiling
         if (getY() <= 0) {
             dy = Math.abs(dy) * BOUNCE_DAMPING;
         }
         
-        // --- Raised ground collision ---
+        // Handle ball bouncing off the ground
         int groundY = getWorld().getHeight() - GROUND_LEVEL_OFFSET;
         if (getY() >= groundY - getImage().getHeight() / 2) {
             setLocation(getX(), groundY - getImage().getHeight() / 2);
@@ -93,7 +96,7 @@ public void playSmashSound() {
             if (Math.abs(dy) < 1) dy = 0;
         }
         
-        // --- Net collision ---
+        // Check for collision with the net
         VolleyballNet net = (VolleyballNet)getOneIntersectingObject(VolleyballNet.class);
         if (net != null && frameCounter - lastNetHitFrame > 5) {
             lastNetHitFrame = frameCounter;
@@ -108,14 +111,16 @@ public void playSmashSound() {
             int netTop = net.getY() - net.getImage().getHeight() / 2;
             int netBottom = net.getY() + net.getImage().getHeight() / 2;
 
-            // Overlap distances
+            // Calculate how far the ball overlaps into the net on each side
             int overlapLeft = ballRight - netLeft;
             int overlapRight = netRight - ballLeft;
             int overlapTop = ballBottom - netTop;
             int overlapBottom = netBottom - ballTop;
 
+            // Find the smallest overlap to determine collision direction
             int minOverlap = Math.min(Math.min(overlapLeft, overlapRight), Math.min(overlapTop, overlapBottom));
 
+            // Bounce ball away from the direction of smallest overlap
             if (minOverlap == overlapLeft) {
                 dx = -Math.abs(dx) * BOUNCE_DAMPING;
                 setLocation(netLeft - getImage().getWidth() / 2 - 2, getY());
@@ -135,7 +140,7 @@ public void playSmashSound() {
             }
         }
 
-        // --- Player collision ---
+        // Check for collision with player
         VolleyballPlayer player = (VolleyballPlayer)getOneIntersectingObject(VolleyballPlayer.class);
         if (player != null) {
             double hitAngle;
@@ -144,19 +149,21 @@ public void playSmashSound() {
 
             boolean isLeftPlayer = player.getX() < getWorld().getWidth() / 2;
 
-            // --- Spike detection (upper hit zone) ---
-            if (getY() < player.getY() - player.getImage().getHeight() / 3) {
-                // SPIKE 💥
-                double spikeSpeed = 25 + Greenfoot.getRandomNumber(10); // fast and brutal
+            // Determine if this is a spike (ball hit from above with player underneath)
+            int horizontalDistance = Math.abs(getX() - player.getX());
+            int verticalDistance = player.getY() - getY();
+            if (verticalDistance > 0 && verticalDistance < SPIKE_HEIGHT && horizontalDistance < SPIKE_PROXIMITY) {
+                // Execute spike with high speed and downward angle
+                double spikeSpeed = 25 + Greenfoot.getRandomNumber(10);
                 double spikeAngle = isLeftPlayer ? Math.toRadians(-60) : Math.toRadians(-120);
 
                 dx = Math.cos(spikeAngle) * spikeSpeed;
                 dy = Math.sin(spikeAngle) * spikeSpeed;
 
-                // 🔊 Smash sound
+                // Play smash sound for spike
                 if (soundEnabled && volleyballSmash != null) {
                     try {
-                        if (volleyballSmash.isPlaying()) volleyballSmash.stop();
+                        volleyballSmash = new GreenfootSound("volleyball_smash.wav");
                         volleyballSmash.play();
                     } catch (Throwable t) {
                         soundEnabled = false;
@@ -164,17 +171,17 @@ public void playSmashSound() {
                 }
             } 
             else {
-                // Normal hit (side or lower part)
+                // Regular hit from the side or lower part of player
                 hitAngle = Math.atan2(getY() - player.getY(), getX() - player.getX());
                 hitAngle -= Math.PI / 12;
 
                 dx = Math.cos(hitAngle) * hitSpeed;
                 dy = Math.sin(hitAngle) * hitSpeed;
 
-                // 🔊 Regular touch sound
+                // Play regular hit sound
                 if (soundEnabled && volleyballSound != null) {
                     try {
-                        if (volleyballSound.isPlaying()) volleyballSound.stop();
+                        volleyballSound = new GreenfootSound("volleyball_sound.wav");
                         volleyballSound.play();
                     } catch (Throwable t) {
                         soundEnabled = false;
@@ -182,7 +189,7 @@ public void playSmashSound() {
                 }
             }
 
-            // Small offset so it doesn't get stuck inside player
+            // Move ball away from player to prevent it from getting stuck
             setLocation(
                 getX() + (int)(Math.cos(Math.atan2(dy, dx)) * 10),
                 getY() + (int)(Math.sin(Math.atan2(dy, dx)) * 10)
@@ -190,4 +197,3 @@ public void playSmashSound() {
         }
     }
 }
-

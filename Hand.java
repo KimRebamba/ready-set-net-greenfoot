@@ -1,8 +1,9 @@
-import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
+import greenfoot.*;
 
 /**
  * Defense hand that can block or hit the basketball.
  * Controls: W (bounce), A (left), S (down), D (right), Space (jump higher)
+ * Can also operate in CPU mode for AI defense
  */
 public class Hand extends Actor
 {
@@ -17,9 +18,22 @@ public class Hand extends Actor
     private boolean onGround = false;
     private int groundY = 0;
     private boolean facingLeft = true;
+    
+    // CPU mode
+    private boolean cpuMode = false;
+    private String difficulty = "medium";
+    private int cpuReactionDelay = 0;
 
     public Hand()
     {
+        this(false, "medium");
+    }
+    
+    public Hand(boolean isCPU, String diff)
+    {
+        this.cpuMode = isCPU;
+        this.difficulty = diff;
+        
         GreenfootImage handImage = new GreenfootImage("images/hand.png");
         handImage.scale(70, 70);
         setImage(handImage);
@@ -27,26 +41,115 @@ public class Hand extends Actor
 
     public void act()
     {
-        handleInput();
+        // Route to appropriate input handler
+        if (cpuMode) {
+            handleCPUInput();
+        } else {
+            handleInput();
+        }
+        
+        // Update position and collision
         applyPhysics();
         checkGround();
         checkBounds();
         mirrorToBall();
-        hitBall(); // ⚡ new feature
+        hitBall();
+    }
+    
+    private void handleCPUInput()
+    {
+        // Skip action if still in reaction delay period
+        if (cpuReactionDelay > 0) {
+            cpuReactionDelay--;
+            return;
+        }
         
-}
+        if (getWorld() == null) return;
+        
+        java.util.List<Basketball> balls = getWorld().getObjects(Basketball.class);
+        if (balls.isEmpty()) return;
+        
+        Basketball ball = balls.get(0);
+        
+        // Set difficulty parameters
+        int reactionTime = 0;
+        int moveSpeedCPU = 0;
+        int jumpChance = 0;
+        
+        switch (difficulty.toLowerCase()) {
+            case "easy":
+                reactionTime = 40;
+                moveSpeedCPU = 3;
+                jumpChance = 20;
+                break;
+            case "medium":
+                reactionTime = 25;
+                moveSpeedCPU = 5;
+                jumpChance = 45;
+                break;
+            case "hard":
+                reactionTime = 15;
+                moveSpeedCPU = 7;
+                jumpChance = 65;
+                break;
+            case "expert":
+                reactionTime = 8;
+                moveSpeedCPU = 8;
+                jumpChance = 80;
+                break;
+            case "impossible":
+                reactionTime = 0;
+                moveSpeedCPU = 10;
+                jumpChance = 95;
+                break;
+        }
+        
+        // Track ball position and move toward it
+        int ballX = ball.getX();
+        int handX = getX();
+        
+        if (ballX < handX - 10) {
+            velocityX = -moveSpeedCPU;
+        } else if (ballX > handX + 10) {
+            velocityX = moveSpeedCPU;
+        } else {
+            velocityX = 0;
+        }
+        
+        // Predict ball trajectory and jump if needed
+        int ballY = ball.getY();
+        int handY = getY();
+        double ballVelocityY = ball.getVelocityY();
+        
+        // Calculate where ball will be shortly
+        double predictedY = ballY + ballVelocityY * 5;
+        
+        // Attempt to intercept the ball
+        if (ballVelocityY > 0 && predictedY > handY - 80 && onGround) {
+            if (Greenfoot.getRandomNumber(100) < jumpChance) {
+                velocityY = -jumpPower;
+                onGround = false;
+                cpuReactionDelay = reactionTime;
+            }
+        }
+    }
 
     private void handleInput()
     {
-      if (Greenfoot.isKeyDown("a") || Greenfoot.isKeyDown("left")) {
-    velocityX = -moveSpeed;
-}
-if (Greenfoot.isKeyDown("d") || Greenfoot.isKeyDown("right")) {
-    velocityX = moveSpeed;
-}
-if ((Greenfoot.isKeyDown("s") || Greenfoot.isKeyDown("down")) && !onGround) {
-    velocityY += 1.0;
-}
+        // Horizontal movement
+        if (Greenfoot.isKeyDown("a") || Greenfoot.isKeyDown("left")) {
+            velocityX = -moveSpeed;
+        }
+        if (Greenfoot.isKeyDown("d") || Greenfoot.isKeyDown("right")) {
+            velocityX = moveSpeed;
+        }
+        
+        // Downward acceleration when airborne
+        if ((Greenfoot.isKeyDown("s") || Greenfoot.isKeyDown("down")) && !onGround) {
+            velocityY += 1.0;
+        }
+        
+        // Jump action
         if ((Greenfoot.isKeyDown("space") || Greenfoot.isKeyDown("w") || Greenfoot.isKeyDown("up")) && onGround)
         {
             velocityY = -jumpPower;
@@ -56,10 +159,14 @@ if ((Greenfoot.isKeyDown("s") || Greenfoot.isKeyDown("down")) && !onGround) {
 
     private void applyPhysics()
     {
+        // Apply gravity while in air
         if (!onGround)
             velocityY += gravity;
 
+        // Reduce horizontal velocity over time
         velocityX *= friction;
+        
+        // Update position
         setLocation(getX() + (int) velocityX, getY() + (int) velocityY);
     }
 
@@ -82,6 +189,7 @@ if ((Greenfoot.isKeyDown("s") || Greenfoot.isKeyDown("down")) && !onGround) {
 
     private void checkBounds()
     {
+        // Keep hand within left/right bounds
         if (getX() <= 25)
         {
             setLocation(25, getY());
@@ -92,10 +200,12 @@ if ((Greenfoot.isKeyDown("s") || Greenfoot.isKeyDown("down")) && !onGround) {
             setLocation(getWorld().getWidth() - 25, getY());
             velocityX = 0;
         }
+        
+        // Bounce off ceiling
         if (getY() <= 25)
         {
             setLocation(getX(), 25);
-            velocityY = 0;
+            velocityY = Math.abs(velocityY) * 0.5;
         }
     }
 
@@ -105,6 +215,7 @@ if ((Greenfoot.isKeyDown("s") || Greenfoot.isKeyDown("down")) && !onGround) {
         if (balls.isEmpty()) return;
 
         Basketball ball = balls.get(0);
+        // Flip hand sprite to face the ball
         boolean ballOnRight = ball.getX() > getX();
         GreenfootImage img = getImage();
 
@@ -122,29 +233,28 @@ if ((Greenfoot.isKeyDown("s") || Greenfoot.isKeyDown("down")) && !onGround) {
         }
     }
 
-    // ⚡ NEW: Make the hand send the ball flying when touched
     private void hitBall()
     {
         Basketball ball = (Basketball) getOneIntersectingObject(Basketball.class);
         if (ball != null)
         {
-            // Determine hit direction
+            // Calculate direction from hand to ball
             double dx = ball.getX() - getX();
             double dy = ball.getY() - getY();
 
-            // Normalize the direction
+            // Convert to unit vector
             double length = Math.sqrt(dx * dx + dy * dy);
-            if (length == 0) length = 1; // avoid divide-by-zero
+            if (length == 0) length = 1;
             dx /= length;
             dy /= length;
 
-            // Power of the hit — tweak for balance
+            // Impact force strength
             double power = 20.0;
 
-            // Apply force to the ball
-            ball.addVelocity(dx * power, dy * power * -0.6); // sends it flying up
+            // Hit ball away from hand
+            ball.addVelocity(dx * power, dy * power * -0.6);
 
-            // Optional: small recoil to hand
+            // Give hand recoil
             velocityX -= dx * 2;
             velocityY -= dy * 2;
         }

@@ -18,47 +18,45 @@ public class BadmintonWorld extends World
 
     private boolean gameOver = false;
 
-    // Message handling
+    // Display temporary messages on screen
     private int messageTimer = 0;
     private String activeMessage = null;
     
-    // Background handling
+    // Manage background transitions
     private int bgChangeTimer = 0;
     private final int BG_CHANGE_DURATION = 100;
     
-    // CPU Mode
+    // CPU opponent settings
     private boolean cpuMode = false;
     private String cpuDifficulty = "impossible"; // easy, medium, hard, expert, impossible
     
     private GreenfootSound whistleSound = new GreenfootSound("whistle_sound.wav");
     private GreenfootSound whistleEndSound = new GreenfootSound("whistle_end.wav");
 
-    // === NEW: Instructions screen handling ===
+    // Show instructions at game start
     private boolean showingInstructions = true;
     private int instructionTimer = 120; // 2 seconds at 60 fps
     private GreenfootImage instructionsImage = new GreenfootImage("badminton_instructions.png");
-    // =========================================
 
     public BadmintonWorld() {
         super(1100, 600, 1);
-        showInstructionsScreen(); // <-- show this first
+        showInstructionsScreen();
     }
     
     public BadmintonWorld(boolean isCPUMode, String difficulty) {
         super(1100, 600, 1);
         this.cpuMode = isCPUMode;
         this.cpuDifficulty = difficulty;
-        showInstructionsScreen(); // <-- show this first
+        showInstructionsScreen();
     }
 
-    // === NEW: Display instructions first ===
+    // Display instructions image before game starts
     private void showInstructionsScreen() {
         instructionsImage.scale(1100, 600);
         setBackground(instructionsImage);
         showingInstructions = true;
         instructionTimer = 120; // about 2 seconds
     }
-    // =======================================
 
     private void prepareGame() {
         // Net
@@ -91,7 +89,7 @@ public class BadmintonWorld extends World
     }
 
     public void act() {
-        // === NEW: Handle instructions before game starts ===
+        // Wait for instructions to finish before starting game
         if (showingInstructions) {
             instructionTimer--;
             if (instructionTimer <= 0) {
@@ -99,12 +97,17 @@ public class BadmintonWorld extends World
                 returnToNormalBg();
                 prepareGame();
             }
-            return; // Stop everything until instructions are done
+            return;
         }
-        // ====================================================
 
         if (Greenfoot.isKeyDown("escape")) {
             Greenfoot.setWorld(new MenuWorld());
+            return;
+        }
+        
+        // Reset game at any time with R key
+        if (Greenfoot.isKeyDown("r")) {
+            resetGame();
             return;
         }
 
@@ -184,6 +187,27 @@ public class BadmintonWorld extends World
         String winner = (player1Score >= 21) ? "LEFT SIDE WINS!" : "RIGHT SIDE WINS!";
         drawOutlinedText(winner, getWidth() / 2, 100, Color.GREEN, Color.BLACK, 50);
         drawOutlinedText("Press ESC to return to menu", getWidth() / 2, 170, Color.WHITE, Color.BLACK, 30);
+        drawOutlinedText("Press R to reset game", getWidth() / 2, 220, Color.CYAN, Color.BLACK, 30);
+    }
+
+    // Reset all game state and show instructions again
+    private void resetGame() {
+        // Reset all game variables
+        player1Score = 0;
+        player2Score = 0;
+        pointAwarded = false;
+        isServingLeft = true;
+        serveDelayTimer = 0;
+        gameOver = false;
+        messageTimer = 0;
+        activeMessage = null;
+        bgChangeTimer = 0;
+
+        // Remove all objects
+        removeObjects(getObjects(null));
+
+        // Show instructions screen again
+        showInstructionsScreen();
     }
 
     private void resetShuttle() {
@@ -208,7 +232,7 @@ public class BadmintonWorld extends World
         addObject(shuttle, x, y);
     }
 
-    // === BACKGROUND ===
+    // Switch to celebration background when point is scored
     private void changeBgToCelebration() {
         GreenfootImage bg = new GreenfootImage("badminton_bg_celebration.png");
         bg.scale(1100, 600);
@@ -216,13 +240,14 @@ public class BadmintonWorld extends World
         bgChangeTimer = BG_CHANGE_DURATION;
     }
 
+    // Return to normal game background
     private void returnToNormalBg() {
         GreenfootImage bg = new GreenfootImage("badminton_bg_normal.png");
         bg.scale(1100, 600);
         setBackground(bg);
     }
 
-    // === MESSAGES ===
+    // Display point scored message with timer
     private void showPointMessage(String text) {
         clearTextArea();
         drawOutlinedText(text, getWidth() / 2, 200, Color.RED, Color.BLACK, 40);
@@ -230,6 +255,7 @@ public class BadmintonWorld extends World
         messageTimer = 70;
     }
 
+    // Display serve announcement message
     private void showServeMessage(String text) {
         clearTextArea();
         drawOutlinedText(text, getWidth() / 2, 100, Color.YELLOW, Color.BLACK, 32);
@@ -237,6 +263,7 @@ public class BadmintonWorld extends World
         messageTimer = 100;
     }
 
+    // Draw text with colored outline effect
     private void drawOutlinedText(String text, int centerX, int y, Color mainColor, Color outlineColor, int size) {
         GreenfootImage img = new GreenfootImage(text, size, mainColor, new Color(0, 0, 0, 0));
         GreenfootImage outline = new GreenfootImage(text, size, outlineColor, new Color(0, 0, 0, 0));
@@ -251,6 +278,7 @@ public class BadmintonWorld extends World
         getBackground().drawImage(combined, x, y);
     }
 
+    // Update scoreboard display
     private void clearTextArea() {
         scoreBoard.update(player1Score, player2Score);
     }

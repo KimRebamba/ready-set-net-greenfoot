@@ -16,7 +16,7 @@ public class Backboard extends Actor
     
     public void act()
     {
-        // Backboard doesn't need to do anything in act()
+        // Backboard is stationary, no updates needed
     }
     
     public void setBasket(Basket basket)
@@ -38,6 +38,7 @@ public class Backboard extends Actor
             
             setLocation(newX, newY);
             
+            // Move the basket along with the backboard
             if (basket != null)
             {
                 basket.setLocation(newX - 45, newY + 51);
@@ -45,22 +46,25 @@ public class Backboard extends Actor
         }
     }
     
-    // ✅ Get backboard bounds
+    // Returns the left edge of the backboard
     public int getLeft()
     {
         return getX() - WIDTH / 2;
     }
     
+    // Returns the right edge of the backboard
     public int getRight()
     {
         return getX() + WIDTH / 2;
     }
     
+    // Returns the top edge of the backboard
     public int getTop()
     {
         return getY() - HEIGHT / 2;
     }
     
+    // Returns the bottom edge of the backboard
     public int getBottom()
     {
         return getY() + HEIGHT / 2;

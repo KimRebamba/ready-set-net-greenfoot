@@ -17,21 +17,34 @@ public class VolleyballWorld extends World {
     private boolean gameOver = false;
     private boolean gameStarted = false; 
 
-    // Instruction screen delay
-    private int startDelay = 30; // frames (~0.5s) before input is accepted
+    // Time to wait before accepting input on instruction screen
+    private int startDelay = 30;
 
-    // Message handling
+    // Current on-screen message and its display duration
     private int messageTimer = 0;
     private String activeMessage = null;
 
     private GreenfootSound whistleSound = new GreenfootSound("volleyball_whistle.wav");
     private GreenfootSound endSound = new GreenfootSound("whistle_end.wav");
 
+    // CPU mode toggle and difficulty setting
+    private boolean cpuMode = false;
+    private String cpuDifficulty = "easy";
+
+    // Manual game setup (for testing)
     public VolleyballWorld() {
         super(1100, 600, 1);
         showInstructions();
     }
 
+    // Constructor with CPU mode and difficulty options
+    public VolleyballWorld(boolean isCPUMode, String difficulty) {
+        super(1100, 600, 1);
+        cpuMode = isCPUMode;
+        cpuDifficulty = difficulty;
+        showInstructions();
+    }
+    
     private void showInstructions() {
         GreenfootImage instructions = new GreenfootImage("volleyball_instructions.png");
         instructions.scale(1100, 602);
@@ -41,70 +54,74 @@ public class VolleyballWorld extends World {
     private void prepareGame() {
         whistleSound.play();
 
-        // Background
+        // Set up game background
         GreenfootImage bg = new GreenfootImage("bg2.png");
         bg.scale(1100, 600);
         setBackground(bg);
 
-        // Net
+        // Create and position net
         net = new VolleyballNet();
         GreenfootImage netImage = net.getImage();
         netImage.scale(20, 315);
         addObject(net, getWidth() / 2, getHeight() - 180);
 
-        // Players
+        // Create both players (left is human, right is AI or second player)
         player1 = new VolleyballPlayer(true);
-        player2 = new VolleyballPlayer(false, false, "impossible");
+        player2 = new VolleyballPlayer(false, cpuMode, cpuDifficulty);
         addObject(player1, 200, getHeight() - 100);
         addObject(player2, 900, getHeight() - 100);
 
-        // Ball
+        // Spawn ball at center court
         spawnNewBallAtCenter();
 
-        // Scoreboard
+        // Display scoreboard
         scoreBoard = new ScoreBoard();
         addObject(scoreBoard, getWidth() / 2, 50);
     }
 
     public void act() {
-        // --- Instruction screen phase ---
-    if (!gameStarted) {
-        if (startDelay > 0) {
-            startDelay--;
-            return;
-        }
+        // Show instruction screen until input is received or timer expires
+        if (!gameStarted) {
+            if (startDelay > 0) {
+                startDelay--;
+                return;
+            }
 
-        // Wait for 3 seconds (≈120 frames) or any input
-        if (startDelay <= 0) {
-            if ( startDelay == -120) {
+            // Auto-start after 3 seconds (~120 frames)
+            if (startDelay == -120) {
                 gameStarted = true;
                 prepareGame();
                 return;
             }
-            startDelay--; // count down to -120
-            if (startDelay < -120) { // auto-start after 3s
+            startDelay--;
+            if (startDelay < -120) {
                 gameStarted = true;
                 prepareGame();
             }
+            return;
         }
-        return;
-    }
 
-        // ESC key → back to menu
+        // ESC returns to main menu
         if (Greenfoot.isKeyDown("escape")) {
             Greenfoot.setWorld(new MenuWorld());
             return;
         }
 
-        // Stop updates if game over
+        // R restarts the current game
+        if (Greenfoot.isKeyDown("r")) {
+            Greenfoot.setWorld(new VolleyballWorld(cpuMode, cpuDifficulty));
+            return;
+        }
+
+        // Stop processing when game ends
         if (gameOver) return;
 
-        // Don’t check score if ball is gone (avoid null error)
+        // Check if ball hit ground and award point
         if (ball != null) {
             checkScore();
         }
 
-        // Handle serve delay
+        // Wait after point before serving next ball
         if (serveDelayTimer > 0) {
             serveDelayTimer--;
             if (serveDelayTimer == 0 && !gameOver) {
@@ -112,7 +129,7 @@ public class VolleyballWorld extends World {
             }
         }
 
-        // Handle timed text disappearance
+        // Hide temporary messages after delay
         if (messageTimer > 0) {
             messageTimer--;
             if (messageTimer == 0) {
@@ -128,9 +145,11 @@ public class VolleyballWorld extends World {
 
         int groundY = getHeight() - 27;
 
+        // Award point when ball hits ground
         if (!pointAwarded && ball.getY() >= groundY - ball.getImage().getHeight() / 2) {
             pointAwarded = true;
 
+            // Determine which side failed to return the ball
             boolean leftLost = (ball.getX() < getWidth() / 2);
             if (leftLost) {
                 player2Score++;
@@ -143,6 +162,7 @@ public class VolleyballWorld extends World {
             scoreBoard.update(player1Score, player2Score);
             new GreenfootSound("volleyball_whistle.wav").play();
 
+            // Check for match victory (first to 25 wins)
             if (player1Score >= 25 || player2Score >= 25) {
                 clearTextArea();
                 endGame();
@@ -159,12 +179,13 @@ public class VolleyballWorld extends World {
         endSound.play();
         String winner = (player1Score >= 25) ? "LEFT SIDE WINS!" : "RIGHT SIDE WINS!";
         drawOutlinedText(winner, getWidth() / 2, 100, Color.GREEN, Color.BLACK, 50);
-        drawOutlinedText("Press ESC to return to menu", getWidth() / 2, 170, Color.WHITE, Color.BLACK, 30);
+        drawOutlinedText("Press ESC to return to menu or R to restart", getWidth() / 2, 170, Color.WHITE, Color.BLACK, 30);
     }
 
     private void resetBall() {
         if (gameOver) return;
 
+        // Remove old ball and spawn new one at serving position
         if (ball != null) removeObject(ball);
         spawnNewBall(isServingLeft ? 200 : 900, getHeight() / 2 - 100);
         ball.setInitialVelocity(isServingLeft ? 4 : -4, -6);
@@ -184,8 +205,7 @@ public class VolleyballWorld extends World {
         addObject(ball, x, y);
     }
 
-    // === MESSAGES ===
-
+    // Display scoring message temporarily
     private void showPointMessage(String text) {
         clearTextArea();
         drawOutlinedText(text, getWidth() / 2, 200, Color.RED, Color.BLACK, 40);
@@ -193,6 +213,7 @@ public class VolleyballWorld extends World {
         messageTimer = 70;
     }
 
+    // Display serving message temporarily
     private void showServeMessage(String text) {
         clearTextArea();
         drawOutlinedText(text, getWidth() / 2, 100, Color.YELLOW, Color.BLACK, 32);
@@ -200,11 +221,13 @@ public class VolleyballWorld extends World {
         messageTimer = 100;
     }
 
+    // Draw text with dark outline for readability
     private void drawOutlinedText(String text, int centerX, int y, Color mainColor, Color outlineColor, int size) {
         GreenfootImage img = new GreenfootImage(text, size, mainColor, new Color(0, 0, 0, 0));
         GreenfootImage outline = new GreenfootImage(text, size, outlineColor, new Color(0, 0, 0, 0));
         GreenfootImage combined = new GreenfootImage(img.getWidth() + 4, img.getHeight() + 4);
 
+        // Draw outline around text
         for (int dx = -2; dx <= 2; dx++)
             for (int dy = -2; dy <= 2; dy++)
                 combined.drawImage(outline, dx + 2, dy + 2);
@@ -214,6 +237,7 @@ public class VolleyballWorld extends World {
         getBackground().drawImage(combined, x, y);
     }
 
+    // Refresh background and redraw score
     private void clearTextArea() {
         GreenfootImage bg = new GreenfootImage("bg2.png");
         bg.scale(1100, 600);

@@ -1,40 +1,32 @@
 import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
 
-/**
- * Basket and backboard actor that moves to random locations when scored.
- * 
- * @author (your name)
- * @version (a version number or a date)
- */
 public class Basket extends Actor
 {
-    private int hoopY; // Y position of the actual hoop opening
+    private int hoopY;
     private GreenfootSound rimSound;
     private boolean soundEnabled = true;
     private Backboard backboard;
     
    
     private void playRimSound() {
-    if (!soundEnabled) return;
-
-    try {
-        GreenfootSound s = new GreenfootSound("sounds/basket_rim.wav");
-        s.setVolume(80); // optional: avoid being too loud
-        s.play();
-    } catch (Exception e) {
-        soundEnabled = false;
-        System.out.println("Bounce sound failed: " + e.getMessage());
+        if (!soundEnabled) return;
+        try {
+            GreenfootSound s = new GreenfootSound("sounds/basket_rim.wav");
+            s.setVolume(80);
+            s.play();
+        } catch (Exception e) {
+            soundEnabled = false;
+            System.out.println("Bounce sound failed: " + e.getMessage());
+        }
     }
-}
-
+    
     public Basket()
     {
         GreenfootImage basketImage = new GreenfootImage("images/basket.png");
         basketImage.scale(80, 60);
         setImage(basketImage);
-        hoopY = 0; // Will be set properly when added to world
+        hoopY = 0;
         
-        // Initialize rim sound with error handling
         try {
             rimSound = new GreenfootSound("sounds/basket_rim.wav");
         } catch (Throwable t) {
@@ -46,52 +38,50 @@ public class Basket extends Actor
     
     public void act()
     {
-        // Initialize hoopY if not set yet
+        // Set the hoop Y position once the basket is added to the world
         if (hoopY == 0 && getWorld() != null)
         {
-            hoopY = getY() + 20; // Hoop is slightly below the image center
+            hoopY = getY() + 20;
         }
     }
     
     public boolean checkScore(Basketball ball)
-{
-    int ballX = ball.getX();
-    int ballY = ball.getY();
-    int prevBallY = ball.getPrevY();
-    int basketX = getX();
-    int basketY = getY();
-    
-    int rimHalfWidth = 35;
-    int rimTop = basketY + 10;
-    int rimBottom = basketY + 55;
-    
-    boolean inHorizontalZone = Math.abs(ballX - basketX) < rimHalfWidth;
-    
-    // ✅ Check if ball CROSSED the rim from ABOVE to BELOW
-    // This catches both normal passes and fast bounces
-    boolean crossedRimFromAbove = (prevBallY < rimTop && ballY >= rimTop);
-    
-    // ✅ ALSO check if ball is currently in the zone moving downward
-    // This catches cases where the ball enters the zone mid-frame
-    boolean inVerticalZone = (ballY >= rimTop && ballY <= rimBottom);
-    boolean movingDownward = ball.getVelocityY() > 0.5;
-    
-    // Must be moving downward
-    if (inHorizontalZone && movingDownward && (crossedRimFromAbove || inVerticalZone))
     {
-        if (soundEnabled && rimSound != null)
+        int ballX = ball.getX();
+        int ballY = ball.getY();
+        int prevBallY = ball.getPrevY();
+        int basketX = getX();
+        int basketY = getY();
+        
+        int rimHalfWidth = 35;
+        int rimTop = basketY + 10;
+        int rimBottom = basketY + 55;
+        
+        // Check if ball is horizontally aligned with the hoop
+        boolean inHorizontalZone = Math.abs(ballX - basketX) < rimHalfWidth;
+        
+        // Check if ball passed through the rim opening from above
+        boolean crossedRimFromAbove = (prevBallY < rimTop && ballY >= rimTop);
+        
+        // Check if ball is currently within the rim vertical zone
+        boolean inVerticalZone = (ballY >= rimTop && ballY <= rimBottom);
+        boolean movingDownward = ball.getVelocityY() > 0.5;
+        
+        // Score when ball moves downward through the hoop
+        if (inHorizontalZone && movingDownward && (crossedRimFromAbove || inVerticalZone))
         {
-            try {
-                playRimSound();
-            } catch (Throwable t) {
-                soundEnabled = false;
+            if (soundEnabled && rimSound != null)
+            {
+                try {
+                    playRimSound();
+                } catch (Throwable t) {
+                    soundEnabled = false;
+                }
             }
+            return true;
         }
-        return true;
+        return false;
     }
-    return false;
-}
-
     
     public void setBackboard(Backboard backboard)
     {

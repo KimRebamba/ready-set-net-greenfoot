@@ -1,0 +1,10 @@
+#BlueJ class context
+comment0.target=ClickableImage
+comment0.text=\r\n\ A\ helper\ Actor\ that\ displays\ an\ image\ which\ enlarges\ slightly\ when\ hovered.\r\n
+comment1.params=imagePath\ width\ height
+comment1.target=ClickableImage(java.lang.String,\ int,\ int)
+comment1.text=\r\n\ Constructor\ that\ initializes\ the\ clickable\ image\ with\ normal\ and\ hover\ states.\r\n\ \r\n\ @param\ imagePath\ The\ file\ path\ to\ the\ image\ resource\r\n\ @param\ width\ The\ desired\ width\ of\ the\ normal-sized\ image\r\n\ @param\ height\ The\ desired\ height\ of\ the\ normal-sized\ image\r\n
+comment2.params=hovering
+comment2.target=void\ updateHover(boolean)
+comment2.text=\r\n\ Updates\ the\ visual\ state\ of\ the\ image\ based\ on\ whether\ it\ is\ being\ hovered.\r\n\ Switches\ between\ normal\ and\ enlarged\ images\ accordingly.\r\n\ \r\n\ @param\ hovering\ true\ if\ the\ mouse\ is\ over\ this\ image,\ false\ otherwise\r\n
+numComments=3

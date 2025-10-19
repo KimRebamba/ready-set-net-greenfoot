@@ -1,5 +1,4 @@
-import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
-
+import greenfoot.*;
 /**
  * Boundary obstacle that spawns as a challenge when score reaches 10.
  * 
@@ -12,22 +11,21 @@ public class Boundary extends Actor
     
     public Boundary()
     {
+        // Load and scale the boundary image to fit game
         GreenfootImage boundaryImage = new GreenfootImage("images/boundary.png");
         boundaryImage.scale(40, 85);
         setImage(boundaryImage);
         
-        // Store dimensions for collision detection
+        // Track dimensions for collision detection later
         width = 80;
         height = 85;
         
         setRotation(0);
-       
     }
     
     public void act()
     {
-        // Boundary doesn't need to do anything in act()
-        // It just sits there as an obstacle
+        // Static obstacle - no movement or behavior needed
     }
     
     public int getWidth()

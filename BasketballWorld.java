@@ -1,13 +1,7 @@
-import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
+import greenfoot.*;
 import java.util.List;
 import java.util.ArrayList;
 
-/**
- * Basketball game world with time limit and scoring mechanics.
- * 
- * @author (your name) 
- * @version (a version number or a date)
- */
 public class BasketballWorld extends World
 {
     private Basketball ball;
@@ -16,58 +10,82 @@ public class BasketballWorld extends World
     private Hand hand;
     private int score = 0;
     private ArrayList<Boundary> boundaries = new ArrayList<Boundary>();
-    private int timeLeft = 120; // 120 seconds
+    private int timeLeft = 120;
     private long lastTime = System.currentTimeMillis();
     private boolean gameOver = false;
+    private boolean endGameDisplayed = false;
     private Arrow arrow;
     private GreenfootSound timeEndSound;
     private boolean soundEnabled = true;
     
-    // Mouse tracking for shooting
+    // CPU difficulty settings
+    private boolean cpuMode = false;
+    private String difficulty = "medium";
+    private int cpuReactionDelay = 0;
+    
+    // Track mouse drag for power and direction
     private boolean mousePressed = false;
     private int startX, startY;
     private long pressStartTime;
+    
+    // Initial instructions screen
+    private boolean showingInstructions = true;
+    private int instructionTimer = 120;
+    private GreenfootImage instructionsImage = new GreenfootImage("basketball_instructions.png");
 
-    /**
-     * Constructor for objects of class BasketballWorld.
-     * 
-     */
     public BasketballWorld()
     {    
-        // Create a new world with 1100x600 cells with a cell size of 1x1 pixels.
+        this(false, "medium");
+    }
+    
+    public BasketballWorld(boolean isCPU, String diff)
+    {
         super(1100, 600, 1);
         
-        // Set background
+        this.cpuMode = isCPU;
+        this.difficulty = diff;
+        
+        showInstructionsScreen();
+    }
+    
+    private void showInstructionsScreen() {
+        instructionsImage.scale(1100, 600);
+        setBackground(instructionsImage);
+        showingInstructions = true;
+        instructionTimer = 120;
+    }
+    
+    private void prepareGame() {
+        // Load and set background image
         GreenfootImage bg = new GreenfootImage("images/bg.png");
         bg.scale(1100, 600);
         setBackground(bg);
         
-        // Add basketball
+        // Create basketball in starting position
         ball = new Basketball();
         addObject(ball, 100, 500);
         
-        // Add defense hand
-        hand = new Hand();
-        addObject(hand, 400, 550); // Position hand in the middle-bottom area
+        // Add defensive hand controlled by AI or player
+        hand = new Hand(cpuMode, difficulty);
+        addObject(hand, 400, 550);
         
-        // Add backboard and basket
+        // Add backboard and basket on right side of court
         backboard = new Backboard();
         addObject(backboard, 1080, 200);
         
         basket = new Basket();
-        addObject(basket, 1035, 251); // Basket hangs below backboard
+        addObject(basket, 1035, 251);
         
-
-        // Connect backboard and basket
+        // Link backboard and basket for collision detection
         backboard.setBasket(basket);
         basket.setBackboard(backboard);
         
-        // Add arrow for shot indication
+        // Create arrow visual for aiming before release
         arrow = new Arrow();
         addObject(arrow, ball.getX(), ball.getY());
         arrow.setVisible(false);
         
-        // Initialize time end sound with error handling
+        // Load end-of-game sound effect with fallback
         try {
             timeEndSound = new GreenfootSound("sounds/time_end.wav");
         } catch (Throwable t) {
@@ -79,6 +97,16 @@ public class BasketballWorld extends World
     
     public void act()
     {
+        // Show instructions screen for 2 seconds before game starts
+        if (showingInstructions) {
+            instructionTimer--;
+            if (instructionTimer <= 0) {
+                showingInstructions = false;
+                prepareGame();
+            }
+            return;
+        }
+        
         if (!gameOver)
         {
             updateTime();
@@ -86,7 +114,13 @@ public class BasketballWorld extends World
             updateUI();
         }
         
-        // Check for ESC key to return to menu
+        // R key resets the current game
+        if (Greenfoot.isKeyDown("r"))
+        {
+            Greenfoot.setWorld(new BasketballWorld(cpuMode, difficulty));
+        }
+        
+        // ESC key returns to main menu
         if (Greenfoot.isKeyDown("escape"))
         {
             Greenfoot.setWorld(new MenuWorld());
@@ -96,30 +130,44 @@ public class BasketballWorld extends World
     private void updateTime()
     {
         long currentTime = System.currentTimeMillis();
-        if (currentTime - lastTime >= 1000) // 1 second has passed
+        if (currentTime - lastTime >= 1000)
         {
             timeLeft--;
             lastTime = currentTime;
             
+            // Game ends when timer reaches zero
             if (timeLeft <= 0)
             {
                 gameOver = true;
                 
-                // Play game end sound
+                // Play end-of-game sound effect
                 if (soundEnabled && timeEndSound != null)
                 {
                     try {
                         timeEndSound.play();
                     } catch (Throwable t) {
-                        // Sound failed to play, continue silently
                         soundEnabled = false;
                     }
                 }
-                
-                showText("Game Over! Final Score: " + score, 400, 300);
-                showText("Press ESC to return to menu", 400, 350);
             }
         }
+    }
+    
+    private void drawOutlinedText(String text, int centerX, int y, Color mainColor, Color outlineColor, int size)
+    {
+        // Create main text and outline text layers
+        GreenfootImage img = new GreenfootImage(text, size, mainColor, new Color(0, 0, 0, 0));
+        GreenfootImage outline = new GreenfootImage(text, size, outlineColor, new Color(0, 0, 0, 0));
+        GreenfootImage combined = new GreenfootImage(img.getWidth() + 4, img.getHeight() + 4);
+
+        // Draw outline around text for better visibility
+        for (int dx = -2; dx <= 2; dx++)
+            for (int dy = -2; dy <= 2; dy++)
+                combined.drawImage(outline, dx + 2, dy + 2);
+
+        combined.drawImage(img, 2, 2);
+        int x = centerX - combined.getWidth() / 2;
+        getBackground().drawImage(combined, x, y);
     }
     
     private void handleMouseInput()
@@ -127,6 +175,7 @@ public class BasketballWorld extends World
         MouseInfo mouse = Greenfoot.getMouseInfo();
         if (mouse != null)
         {
+            // Start tracking mouse drag when button is pressed
             if (Greenfoot.mousePressed(null))
             {
                 mousePressed = true;
@@ -136,9 +185,9 @@ public class BasketballWorld extends World
                 arrow.setVisible(true);
             }
             
+            // Update arrow angle and power during drag
             if (mousePressed)
             {
-                // Update arrow position and angle
                 int deltaX = mouse.getX() - startX;
                 int deltaY = mouse.getY() - startY;
                 double angle = Math.atan2(deltaY, deltaX);
@@ -149,16 +198,17 @@ public class BasketballWorld extends World
                 arrow.setLocation(ball.getX(), ball.getY());
             }
             
+            // Release and shoot ball when mouse button is clicked
             if (Greenfoot.mouseClicked(null) && mousePressed)
             {
                 mousePressed = false;
                 arrow.setVisible(false);
                 
-                // Calculate shot velocity
+                // Calculate velocity based on drag distance
                 int deltaX = mouse.getX() - startX;
                 int deltaY = mouse.getY() - startY;
                 double power = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                power = Math.min(power, 200); // Limit max power
+                power = Math.min(power, 200);
                 
                 ball.shoot(deltaX, deltaY, power);
             }
@@ -167,51 +217,71 @@ public class BasketballWorld extends World
     
     private void updateUI()
     {
-        // Clear old text (by redrawing background each frame)
+        // Display final score and reset instructions once when game ends
+        if (gameOver && !endGameDisplayed) {
+            GreenfootImage bg = new GreenfootImage("images/bg.png");
+            bg.scale(1100, 600);
+            setBackground(bg);
+            
+            drawOutlinedText("GAME OVER", 550, 150, Color.YELLOW, Color.BLACK, 60);
+            drawOutlinedText("Final Score: " + score, 550, 250, Color.WHITE, Color.BLACK, 50);
+            drawOutlinedText("Press R to reset or ESC to return to menu", 550, 350, Color.WHITE, Color.BLACK, 30);
+            
+            endGameDisplayed = true;
+            return;
+        }
+        
+        if (gameOver) return;
+        
+        // Redraw background each frame and display current stats
         GreenfootImage bg = new GreenfootImage("images/bg.png");
         bg.scale(1100, 600);
         setBackground(bg);
         
-        // Draw new text
+        // Draw score and time remaining in top corners
         drawGameText("Score: ", score, 40, 20, Color.WHITE, Color.BLACK);
         drawGameText("Time: ", timeLeft, 950, 20, Color.RED, Color.BLACK);
+        
+        // Show difficulty setting if playing against CPU
+        if (cpuMode) {
+            drawGameText("Difficulty: " + difficulty.toUpperCase(), "", 40, 570, Color.WHITE, Color.BLACK);
+        }
     }
 
-    
     public void addScore()
     {
-        score += 2; // 2 points per basket
+        score += 2;
         basket.moveToRandomLocation();
         
-        // Add boundary when score reaches 10, then every 10 points
+        // Add new obstacle boundaries at score milestones
         if (score == 10 || (score > 10 && score % 10 == 0))
         {
             addBoundary();
         }
         
-        // Move all existing boundaries to new positions after each score
+        // Relocate existing boundaries after each basket
         moveAllBoundaries();
     }
     
     private void addBoundary()
     {
-        // Try to find a good position for the boundary
+        // Attempt to find open space for new obstacle near basket
         int attempts = 0;
         int maxAttempts = 50;
         
         while (attempts < maxAttempts)
         {
-            // Generate random position near the basket
             int basketX = basket.getX();
             int basketY = basket.getY();
             
-            int offsetX = Greenfoot.getRandomNumber(200) - 100; // -100 to +100
-            int offsetY = Greenfoot.getRandomNumber(150) - 75;  // -75 to +75
+            // Random position within range of basket
+            int offsetX = Greenfoot.getRandomNumber(200) - 100;
+            int offsetY = Greenfoot.getRandomNumber(150) - 75;
             
             int newX = Math.max(50, Math.min(getWidth() - 50, basketX + offsetX));
             int newY = Math.max(50, Math.min(getHeight() - 100, basketY + offsetY));
             
-            // Check if position is valid using the same validation logic
+            // Only place if position doesn't overlap existing objects
             if (isValidBoundaryPosition(newX, newY, null))
             {
                 Boundary newBoundary = new Boundary();
@@ -226,6 +296,7 @@ public class BasketballWorld extends World
     
     private void moveAllBoundaries()
     {
+        // Reposition all obstacles to new random locations
         for (Boundary boundary : boundaries)
         {
             moveBoundaryToNewPosition(boundary);
@@ -234,23 +305,22 @@ public class BasketballWorld extends World
     
     private void moveBoundaryToNewPosition(Boundary boundary)
     {
-        // Try to find a good position for the boundary
+        // Find valid new position for single boundary
         int attempts = 0;
         int maxAttempts = 50;
         
         while (attempts < maxAttempts)
         {
-            // Generate random position near the basket
             int basketX = basket.getX();
             int basketY = basket.getY();
             
-            int offsetX = Greenfoot.getRandomNumber(200) - 100; // -100 to +100
-            int offsetY = Greenfoot.getRandomNumber(150) - 75;  // -75 to +75
+            int offsetX = Greenfoot.getRandomNumber(200) - 100;
+            int offsetY = Greenfoot.getRandomNumber(150) - 75;
             
             int newX = Math.max(50, Math.min(getWidth() - 50, basketX + offsetX));
             int newY = Math.max(50, Math.min(getHeight() - 100, basketY + offsetY));
             
-            // Check if position is valid (not overlapping with basket, backboard, or other boundaries)
+            // Avoid overlapping with basket, backboard, or other boundaries
             if (isValidBoundaryPosition(newX, newY, boundary))
             {
                 boundary.setLocation(newX, newY);
@@ -263,30 +333,30 @@ public class BasketballWorld extends World
     
     private boolean isValidBoundaryPosition(int x, int y, Boundary excludeBoundary)
     {
-        // Check distance from basket (don't spawn too close)
+        // Don't spawn obstacles too close to basket
         double distanceFromBasket = Math.sqrt((x - basket.getX()) * (x - basket.getX()) + 
                                              (y - basket.getY()) * (y - basket.getY()));
-        if (distanceFromBasket < 100) // Increased minimum distance
+        if (distanceFromBasket < 100)
         {
             return false;
         }
         
-        // Check distance from backboard (don't spawn too close)
+        // Don't spawn obstacles too close to backboard
         double distanceFromBackboard = Math.sqrt((x - backboard.getX()) * (x - backboard.getX()) + 
                                                 (y - backboard.getY()) * (y - backboard.getY()));
-        if (distanceFromBackboard < 100) // Minimum distance from backboard
+        if (distanceFromBackboard < 100)
         {
             return false;
         }
         
-        // Check overlap with other boundaries
+        // Check spacing between obstacles
         for (Boundary existingBoundary : boundaries)
         {
             if (existingBoundary != excludeBoundary)
             {
                 double distance = Math.sqrt((x - existingBoundary.getX()) * (x - existingBoundary.getX()) + 
                                            (y - existingBoundary.getY()) * (y - existingBoundary.getY()));
-                if (distance < 120) // Increased minimum distance between boundaries
+                if (distance < 120)
                 {
                     return false;
                 }
@@ -301,13 +371,13 @@ public class BasketballWorld extends World
         return gameOver;
     }
     
+    // Draw text with integer value and outline effect
     private void drawGameText(String label, int value, int x, int y, Color mainColor, Color outlineColor)
     {
         String text = label + value;
-        Font font = new Font("Arial", true, false, 28); // Bold, 28px
+        Font font = new Font("Arial", true, false, 28);
         GreenfootImage img = new GreenfootImage(text, 28, mainColor, new Color(0, 0, 0, 0));
 
-        // Create outline
         GreenfootImage outline = new GreenfootImage(text, 28, outlineColor, new Color(0, 0, 0, 0));
         GreenfootImage combined = new GreenfootImage(img.getWidth() + 4, img.getHeight() + 4);
         for (int dx = -2; dx <= 2; dx++)
@@ -315,7 +385,23 @@ public class BasketballWorld extends World
                 combined.drawImage(outline, dx + 2, dy + 2);
         combined.drawImage(img, 2, 2);
 
-        // Draw final image
+        getBackground().drawImage(combined, x, y);
+    }
+    
+    // Draw text with string value and outline effect
+    private void drawGameText(String label, String value, int x, int y, Color mainColor, Color outlineColor)
+    {
+        String text = label + value;
+        Font font = new Font("Arial", true, false, 20);
+        GreenfootImage img = new GreenfootImage(text, 20, mainColor, new Color(0, 0, 0, 0));
+
+        GreenfootImage outline = new GreenfootImage(text, 20, outlineColor, new Color(0, 0, 0, 0));
+        GreenfootImage combined = new GreenfootImage(img.getWidth() + 4, img.getHeight() + 4);
+        for (int dx = -2; dx <= 2; dx++)
+            for (int dy = -2; dy <= 2; dy++)
+                combined.drawImage(outline, dx + 2, dy + 2);
+        combined.drawImage(img, 2, 2);
+
         getBackground().drawImage(combined, x, y);
     }
 }

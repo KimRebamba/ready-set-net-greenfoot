@@ -1,6 +1,5 @@
 #BlueJ class context
 comment0.target=Basketball
-comment0.text=\r\n\ Basketball\ actor\ with\ physics\ including\ gravity,\ bouncing,\ and\ shooting\ mechanics.\r\n\ \r\n\ @author\ (your\ name)\r\n\ @version\ (a\ version\ number\ or\ a\ date)\r\n
 comment1.params=
 comment1.target=int\ getPrevY()
 comment10.params=
